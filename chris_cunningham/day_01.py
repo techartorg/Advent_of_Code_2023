@@ -21,7 +21,7 @@ def solve(d: dict[str, int]) -> int:
     result = 0
 
     for line in inputs:
-        l_word = min(((i, v) for k, v in d.items() if (i := line.find(k)) != -1), key=get, default=(9001, 0))
+        l_word = min(((i, v) for k, v in d.items() if (i := line.find(k)) != -1), key=get, default=(len(line), 0))
         r_word = max(((i, v) for k, v in d.items() if (i := line.rfind(k)) != -1), key=get, default=(-1, 0))
         result += l_word[1] * 10 + r_word[1]
 
