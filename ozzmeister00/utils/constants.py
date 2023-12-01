@@ -18,3 +18,6 @@ def getInputsFolder():
     sourceFolder = os.path.split(utilsFolder)[0]
 
     return os.path.join(sourceFolder, INPUTS_FOLDER_NAME)
+
+
+DIGITS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
