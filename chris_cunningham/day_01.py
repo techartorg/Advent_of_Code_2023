@@ -14,21 +14,16 @@ words_to_nums = {
 }
 
 
-def solve(d: dict[str, int]) -> int:
-    def get(x):
-        return x[0]
-
-    result = 0
-
-    for line in inputs:
-        l_word = min(((i, v) for k, v in d.items() if (i := line.find(k)) != -1), key=get, default=(len(line), 0))
-        r_word = max(((i, v) for k, v in d.items() if (i := line.rfind(k)) != -1), key=get, default=(-1, 0))
-        result += l_word[1] * 10 + r_word[1]
-
-    return result
+def get(x: (int, int)) -> int:
+    return x[0]
 
 
-numbers = {str(i): i for i in range(1, 10)}
-print(f"Part One: {solve(numbers)}")
+def solve(line: str, d: dict[str, int]) -> int:
+    l_word = min(((i, v) for k, v in d.items() if (i := line.find(k)) != -1), key=get, default=(len(line), 0))
+    r_word = max(((i, v) for k, v in d.items() if (i := line.rfind(k)) != -1), key=get, default=(-1, 0))
+    return l_word[1] * 10 + r_word[1]
 
-print(f"Part Two: {solve(numbers | words_to_nums)}")
+
+numbers = {str(i): i for i in words_to_nums.values()}
+print(f"Part One: {sum(solve(l, numbers) for l in inputs)}")
+print(f"Part Two: {sum(solve(l, numbers | words_to_nums) for l in inputs)}")
