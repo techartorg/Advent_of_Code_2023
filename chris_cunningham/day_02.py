@@ -17,6 +17,8 @@ def parse_games(data: list[str]) -> list[Game]:
     result = []
     for line in data:
         _, game = line.split(": ")
+        if not game.strip():
+            continue
 
         matches = []
         for m in game.split("; "):
