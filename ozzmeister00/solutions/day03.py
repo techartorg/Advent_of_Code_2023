@@ -48,29 +48,32 @@ from utils.solver import ProblemSolver
 
 import utils.constants
 import utils.math 
+import utils.string
+
 
 class PartNumber(int):
     """
     Convenience class for creating and storing a part number and
     the grid coordinates associated with it
     """
-    def __init__(number, coords):
-        """
+    def __new__(cls, number, coords):
+        return super(PartNumber, cls).__new__(cls, number)
 
-        :param str number: the string representation of the number
-        :param list[utils.math.Int2] coords: the coordinates occupied by the part number
-        """
-        super(PartNumber, self).__init__(number)
+    def __init__(self, number, coords):
+        super(PartNumber, self).__init__()
         self.coords = coords
+
+    def __repr__(self):
+        return f'PartNumber({super(PartNumber, self).__repr__()}, {self.coords})'
 
 
 class Solver(ProblemSolver):
     def __init__(self):
-        super(ProblemSolver, self).__init__(3)
+        super(Solver, self).__init__(3)
 
         self.testDataAnswersPartOne = [4361]
 
-    def ProcessInput(data=None):
+    def ProcessInput(self, data=None):
         """
         :param str data: the engine schematic
 
@@ -79,7 +82,7 @@ class Solver(ProblemSolver):
         if not data:
             data = self.rawData
 
-        width = data.splintlines()[0]
+        width = len(data.splitlines()[0])
 
         return utils.math.Grid2D(width, data.replace('\n', ''))
 
@@ -93,23 +96,38 @@ class Solver(ProblemSolver):
 
         :return list[PartNumber]:
         """
-
-        
-
-        # put the row back into a single string
-        # we'll need this later to get the coordinates for the numbers
-        combined = ''.join(row)
-
-        # so we can split it out on periods and look for numbers
-        for item in combined.split('.'): 
-
-
         partNumbers = []
+
+        currentNumber = ''
+        startIndex = -1
+        endIndex = -1
+
+        # iterate through the row, parsing out numbers by hand
+        for i, v in enumerate(row):
+            if v.isnumeric():
+                if startIndex == -1:
+                    startIndex = i 
+                currentNumber += v 
+
+            # if it's not a number, but we'd been making a number
+            # then we know the number we're constructing is over
+            elif startIndex > -1:
+                endIndex = i
+                # generate the coordinates of the number
+                coords = [utils.math.Int2((x, y)) for x in range(startIndex, endIndex)]
+
+                # and add a new PartNumber to the list
+                partNumbers.append(PartNumber(currentNumber, coords))
+
+                # then reset our search variables
+                startIndex = -1
+                endIndex = -1
+                currentNumber = ''
 
         return partNumbers
         
 
-    def SolvePartOne(data=None):
+    def SolvePartOne(self, data=None):
         """
         Finds all the part numbers in the input schematic (numbers adjacent to symbols that are not .)
         and returns the sum of those part numbers
@@ -123,18 +141,31 @@ class Solver(ProblemSolver):
 
         result = 0 
 
-        # finding all the numbers and then locating symbols on their periphery
-        # is likely going to be easier than finding all the symbols and 
-        # trying to resolve the adjacent numbers.
-
         # step one, find all the numbers and their coordinates by scanning
-        # through each line in the grid. As long as the next character is a number, 
-        # then we're still in the same number.
-        
+        # through each line in the grid.
         partNumbers = []
+        for y, row in data.enumerateRows():
+            partNumbers += self.getPartNumbersFromRow(y, row)
 
+        print('\n'.join([str(p) for p in partNumbers[:10]]))
 
+        # then, loop through all the neighbors of the coordinates of the part numbers
+        # and if any of those values are symbols, add that part number to the result
+        for part in partNumbers:
+            i = 0
+            while i < len(part.coords):
+                j = 0
+                neighbors = list(data.enumerateNeighborsBox(part.coords[i], 1))
+                while j < len(neighbors):
+                    c, v = neighbors[j]
+                    if not v.isnumeric() and v != '.':
+                        print(f"{part} is adjacent symbol {v} at {c}")
+                        result += part
+                        i = len(part.coords)
+                        j = 9
+                    j += 1
 
+                i += 1
 
         return result
 
