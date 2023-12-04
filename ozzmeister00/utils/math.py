@@ -291,12 +291,20 @@ def getBarycentric(p, a, b, c):
 
 
 class Grid2D(list):
-    Up = Int2((0, 1))
-    Down = Int2((0, -1))
-    Left = Int2((-1, 0))
-    Right = Int2((1, 0))
+    North = Up = Int2((0, 1))
+    South = Down = Int2((0, -1))
+    NorthWest = UpLeft = Int2((-1, 1))
+    West = Left = Int2((-1, 0))
+    SouthWest = DownLeft = Int2((-1, -1))
+    NorthEast = UpRight = Int2((1, 1))
+    East = Right = Int2((1, 0))
+    SouthEast = DownRight = Int2((1, -1))
 
+    # store these anti-clockwise, so we can potentially do useful stuff with that assumption later
+    neighbors = [Right, UpRight, Up, UpLeft, Left, DownLeft, Down, DownRight]
     orthoNeighbors = [Right, Up, Left, Down]
+    diagonalNeighbors = [UpRight, UpLeft, DownLeft, DownRight]
+    
 
     def __init__(self, width, data=None):
         """
@@ -436,6 +444,26 @@ class Grid2D(list):
             coord = Int2((x, y))
             yield coord, self[coord]
 
+    def enumerateRows(self, reverse=False):
+        """
+        Yield all of the rows in the grid as a row number, and a list of items
+
+        :param bool reverse: whether to yield the rows from top to bottom or bottom to top
+
+        :yields int, list[object]:
+        """
+        step = 1 if not reverse else -1
+        for y in list(range(self.height))[::step]:
+            yield y, self[Int2((0, y)):Int2((self.width-1, y))]
+
+    def rows(self, reverse=False):
+        """
+        Yield all the rows in the grid as a list of items
+
+        :yields list[object]:
+        """
+        raise NotImplementedError("Figure out a way to reuse EnumerateRows")
+
     def enumerateColumn(self, x, reverse=False):
         """
         Yield the items from top to bottom in the given column
@@ -449,6 +477,26 @@ class Grid2D(list):
         for y in coords[::step]:
             coord = Int2((x, y))
             yield coord, self[coord]
+
+    def enumerateColumns(self, reverse=False):
+        """
+        Yield all the columns in this grid as lists
+
+        :param bool reverse: if the columns should be yielt from the left to right, or right to left
+        '
+        :yields (int, list[object]): the current columnn number and a list of items from 0 to 1
+        """
+        step = 1 if not reverse else -1
+        for x in list(range(self.width))[::step]:
+            yield x, self[Int2((x, 0)):Int2((x, self.height-1))]
+
+    def columns(self, reverse=False):
+        """
+        Yield all the columns in the grid as a list of objects
+
+        :param bool reverse: whether to run from left to right or right to left
+        """
+        raise NotImplementedError("Figure out a way to reuse EnumerateColumns")
 
     def copy(self):
         """

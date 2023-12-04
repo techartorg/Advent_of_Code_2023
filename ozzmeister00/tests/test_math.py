@@ -179,6 +179,17 @@ class TestGrid2D(TestCase):
         outRow = [value for coord, value in testObj.enumerateRow(0, reverse=True)]
         self.assertEqual(expectedRow, outRow)
 
+    def test_enumerateRows(self):
+        testObj = utils.math.Grid2D(2, data=self.inGrid)
+        expectedOutput = [['A', 'B'], ['C', 'D']]
+        reversedOutput = list(reversed(expectedOutput))
+
+        outRows = [value for row, value in testObj.enumerateRows()]
+        self.assertEqual(expectedOutput, outRows)
+
+        reversedRows = [value for row, value in testObj.enumerateRows(reverse=True)]
+        self.assertEqual(expectedOutput, outRows)
+
     def test_enumerateColumn(self):
         testObj = utils.math.Grid2D(2, data=self.inGrid)
         expectedColumn = ['A', 'C']
@@ -188,6 +199,17 @@ class TestGrid2D(TestCase):
         expectedColumn = ['C', 'A']
         outColumn = [value for coord, value in testObj.enumerateColumn(0, reverse=True)]
         self.assertEqual(expectedColumn, outColumn)
+
+    def test_enumerateColumns(self):
+        testObj = utils.math.Grid2D(2, data=self.inGrid)
+        expectedOutput = [['A', 'C'], ['B', 'D']]
+        reversedOutput = list(reversed(expectedOutput))
+
+        outColumns = [value for x, value in testObj.enumerateColumns()]
+        self.assertEqual(expectedOutput, outColumns)
+
+        outColumns = [value for x, value in testObj.enumerateColumns(reverse=True)]
+        self.assertEqual(reversedOutput, outColumns)
 
     def test_slice(self):
         testObj = utils.math.Grid2D(2, data=self.inGrid)
