@@ -134,7 +134,6 @@ import utils.list
 from utils.solver import ProblemSolver
 
 
-
 class defaultintlist(utils.list.defaultlist):
     """
     Override the functionality of defaultlist to pass
