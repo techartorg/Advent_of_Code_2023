@@ -211,6 +211,19 @@ class TestGrid2D(TestCase):
         outColumns = [value for x, value in testObj.enumerateColumns(reverse=True)]
         self.assertEqual(reversedOutput, outColumns)
 
+    def test_finders(self):
+        data = [1, 2, 3, 1]
+        testObj = utils.math.Grid2D(2, data=data)
+        indexes = testObj.findIndexes(1)
+        expectedIndexes = [0, 3]
+
+        self.assertEqual(indexes, expectedIndexes)
+
+        coords = testObj.findCoords(1)
+        expectedCoords = [utils.math.Int2((0, 0)), utils.math.Int2((1, 1))]
+
+        self.assertEqual(coords, expectedCoords)
+
     def test_slice(self):
         testObj = utils.math.Grid2D(2, data=self.inGrid)
         outSlice = testObj[self.testCoords[0][0]:self.testCoords[1][0]]

@@ -367,7 +367,7 @@ class Grid2D(list):
         Exposing the method this way, because I'm not sure why I needed this
         to be internal only
         """
-        self._coordsToIndex(coords)
+        return self._coordsToIndex(coords)
 
     def indexToCoords(self, index):
         """
@@ -505,6 +505,22 @@ class Grid2D(list):
         :returns Grid2D:
         """
         return Grid2D(self.width, data=self)
+
+    def findIndexes(self, inValue):
+        """
+        Find all the instances of value in the grid and return their 1D coordinates
+
+        :return list[int]: indexes of all the instances of the input value in the grid
+        """
+        return [index for index, value in enumerate(self) if value == inValue]
+
+    def findCoords(self, value):
+        """
+        Find all the instances of value in the grid and return their 2D coordinates
+
+        :return list[Int2]: coordinates of all the instances of the input value in the grid
+        """
+        return [self.indexToCoords(index) for index in self.findIndexes(value)]
 
     def __getitem__(self, coords):
         """
