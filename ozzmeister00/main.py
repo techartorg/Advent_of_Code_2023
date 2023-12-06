@@ -9,7 +9,7 @@ import sys
 sys.path.append(os.path.split(__file__)[0])
 
 # should only need to change the day number here in order to test new days
-import solutions.day03 as today
+import solutions.day04 as today
 
 if __name__ == '__main__':
     day = today.Solver()
