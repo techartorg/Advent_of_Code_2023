@@ -155,7 +155,11 @@ from utils.solver import ProblemSolver
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 class defaultintlist(utils.list.defaultlist):
+=======
+class DefaultIntList(utils.list.defaultlist):
+>>>>>>> ff7259af296058c439ebe99fc404ead7600c487a
 =======
 class DefaultIntList(utils.list.defaultlist):
 >>>>>>> ff7259af296058c439ebe99fc404ead7600c487a
