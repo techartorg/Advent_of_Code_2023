@@ -127,22 +127,42 @@ Seed 13, soil 13, fertilizer 52, water 41, light 34, temperature 34, humidity 35
 So, the lowest location number in this example is 35.
 
 What is the lowest location number that corresponds to any of the initial seed numbers?
-"""
 
+--- Part Two ---
+Everyone will starve if you only plant such a small number of seeds. Re-reading the almanac, it looks
+like the seeds: line actually describes ranges of seed numbers.
+
+The values on the initial seeds: line come in pairs. Within each pair, the first value is the start of
+the range and the second value is the length of the range. So, in the first line of the example above:
+
+seeds: 79 14 55 13
+This line describes two ranges of seed numbers to be planted in the garden. The first range starts with
+ seed number 79 and contains 14 values: 79, 80, ..., 91, 92. The second range starts with seed number
+ 55 and contains 13 values: 55, 56, ..., 66, 67.
+
+Now, rather than considering four seed numbers, you need to consider a total of 27 seed numbers.
+
+In the above example, the lowest location number can be obtained from seed number 82, which corresponds
+to soil 84, fertilizer 84, water 84, light 77, temperature 45, humidity 46, and location 46. So, the lowest
+location number is 46.
+
+Consider all of the initial seed numbers listed in the ranges on the first line of the almanac. What is the
+ lowest location number that corresponds to any of the initial seed numbers?
+"""
 
 import utils.list
 from utils.solver import ProblemSolver
 
 
-
-class defaultintlist(utils.list.defaultlist):
+class DefaultIntList(utils.list.defaultlist):
     """
     Override the functionality of defaultlist to pass
     the index we're appending to the fill function
     """
+
     def __init__(self):
-        super(defaultintlist, self).__init__(int)
-    
+        super(DefaultIntList, self).__init__(int)
+
     def _fill(self, index):
         while len(self) <= index:
             self.append(self._cls(index))
@@ -152,18 +172,98 @@ class Seed(object):
     """
     Given an input almanac, get all the information about a given seed
     """
+
     def __init__(self, seed, almanac):
         """
         :param Almanac almanac: the almanac to use to describe this seed
         """
         self.seed = seed
-        self.soil = almanac.seedToSoilMap[self.seed]
-        self.fertilizer = almanc.soilToFertilizerMap[self.soil]
-        self.water = almanac.fertilizerToWaterMap[self.fertilizer]
-        self.light = almanac.waterToLightMap[self.water]
-        self.temperature = almanac.lightToTemperatureMap[self.light]
-        self.humidity = almanac.temperatureToHumidityMap[self.temperature]
-        self.location = almanac.humidityToLocationMap[self.humidity]
+        self.soil = almanac.seedToSoilMap.findDestination(self.seed)
+        self.fertilizer = almanac.soilToFertilizerMap.findDestination(self.soil)
+        self.water = almanac.fertilizerToWaterMap.findDestination(self.fertilizer)
+        self.light = almanac.waterToLightMap.findDestination(self.water)
+        self.temperature = almanac.lightToTemperatureMap.findDestination(self.light)
+        self.humidity = almanac.temperatureToHumidityMap.findDestination(self.temperature)
+        self.location = almanac.humidityToLocationMap.findDestination(self.humidity)
+        self.attributes = [self.seed, self.soil, self.fertilizer, self.water, self.light, self.temperature,
+                           self.humidity, self.location]
+
+    def __str__(self):
+        return ' -> '.join([str(i) for i in self.attributes])
+
+
+class Range(object):
+    def __init__(self, rangeLine):
+        """
+
+        :param str rangeLine: of the form DestStart SourceStart Length
+        """
+        self.destStart, self.sourceStart, self.length = [int(i) for i in rangeLine.split(' ')]
+        self.sourceEnd = self.sourceStart + self.length
+        self.destEnd = self.destStart + self.length
+
+    def isInRange(self, value):
+        """
+        :param int value: the value to look for in this range
+        :return bool: whether the source value is contained by this range
+        """
+        return self.sourceStart <= value < self.sourceEnd
+
+    def findDestination(self, value):
+        """
+
+        :param int value: the source value
+        :return int: the destination value in this range
+        """
+        return (value - self.sourceStart) + self.destStart
+
+    def doesRangeOverlap(self, other):
+        """
+
+        :param Range other: the range we want to test against
+
+        :return bool: whether there's any overlap between the source of this range and the source of the input range
+        """
+        return other.sourceStart >= self.sourceStart or other.sourceEnd <= self.sourceEnd
+
+    def getOverlap(self, other):
+        """
+        Return multiple ranges, defining the mappings between all the parts that overlap with the current range
+
+        :param Range other: the range we want to build overlaps with
+        :return list[Range]: three ranges for the head, heart, and tail of overlaps with the heart range
+            describing the input Other's source range with this range as the Dest, while the head and tail ranges
+            just map 1:1 for the source range
+        """
+        
+
+
+class Mapping(object):
+    """
+    Contains all the ranges for a given mapping
+    """
+
+    def __init__(self, rangeLines):
+        """
+        :param list[str] rangeLines: the range lines we're working with
+        """
+        self.ranges = [Range(rangeLine) for rangeLine in rangeLines if rangeLine.strip()]
+
+    def findDestination(self, source):
+        """
+        Look through all the ranges in this mapping to see if the input source is
+        associated with any ranges, and if so return that mapping
+
+        Otherwise, return the source itself
+
+        :param int source: the source we're starting from
+        :return int: the destination we're trying to get to
+        """
+        for range in self.ranges:
+            if range.isInRange(source):
+                return range.findDestination(source)
+
+        return source
 
 
 class Almanac(object):
@@ -193,30 +293,43 @@ class Almanac(object):
         humidityToLocation = 'humidity-to-location map:'
         humidityToLocationIndex = lines.index(humidityToLocation)
 
-        self.seedToSoilMap = self._buildMap(lines[seedToSoilIndex:soilToFertilizerIndex-1])
-        self.soilToFertilizerMap = self._buildMap(lines[soilToFertilizerIndex:fertilizerToWaterIndex-1])
-        self.fertilizerToWaterMap = self._buildMap(lines[fertilizerToWaterIndex:waterToLightIndex-1])
-        self.waterToLightMap = self._buildMap(lines[waterToLightIndex:lightToTemperatureIndex-1])
-        self.lightToTemperatureMap = self._buildMap(lines[lightToTemperatureIndex:temperatureToHumidityIndex-1])
-        self.temperatureToHumidityMap = self._buildMap(lines[temperatureToHumidityIndex:humidityToLocationIndex-1])
-        self.humidityToLocationMap = self._buildMap(lines[humidityToLocationIndex:])
+        self.seedToSoilMap = self._buildMap(lines[seedToSoilIndex + 1:soilToFertilizerIndex - 1])
+        self.soilToFertilizerMap = self._buildMap(lines[soilToFertilizerIndex + 1:fertilizerToWaterIndex - 1])
+        self.fertilizerToWaterMap = self._buildMap(lines[fertilizerToWaterIndex + 1:waterToLightIndex - 1])
+        self.waterToLightMap = self._buildMap(lines[waterToLightIndex + 1:lightToTemperatureIndex - 1])
+        self.lightToTemperatureMap = self._buildMap(lines[lightToTemperatureIndex + 1:temperatureToHumidityIndex - 1])
+        self.temperatureToHumidityMap = self._buildMap(
+            lines[temperatureToHumidityIndex + 1:humidityToLocationIndex - 1])
+        self.humidityToLocationMap = self._buildMap(lines[humidityToLocationIndex + 1:])
 
-    self._buildMap(self, rangeLines):
+    @staticmethod
+    def _buildMap(rangeLines):
         """
         Make a mapping for a given __ to __ map from the input lines
 
         :param list[str]: the line ranges you want to build from
 
-        :returns defaultintlist: a list where the index maps the source value to a dest value
+        :returns Mapping: a list where the index maps the source value to a dest value
+        """
+        return Mapping(rangeLines)
+
+    @staticmethod
+    def _buildMapDefaultIntList(self, rangeLines):
+        """
+        This is too slow for words with the actual dataset
+
+        :param rangeLines:
+        :return:
         """
         # the defaultintlist class should handle cases where the subsequent ranges
         # overlap with parts of the list that have already been filled
-        outList = defaultintlist()
+        outList = DefaultIntList()
         for line in rangeLines:
             if line.strip():
                 destStart, sourceStart, length = [int(i) for i in line.split(' ')]
-                    for i in range(length):
-                        outList[sourceStart + i] = destStart + i
+                print(destStart, sourceStart, length)
+                for i in range(length):
+                    outList[sourceStart + i] = destStart + i
 
         return outList
 
@@ -226,6 +339,7 @@ class Solver(ProblemSolver):
         super(Solver, self).__init__(5)
 
         self.testDataAnswersPartOne = [35]
+        self.testDataAnswersPartTwo = [46]
 
     def ProcessInput(self, data=None):
         """
@@ -235,11 +349,11 @@ class Solver(ProblemSolver):
         """
         if not data:
             data = self.rawData
-        
+
         lines = data.splitlines()
 
-        seeds = [int(i) for i in data[0].split(':')[-1]]
-        almanac = Almanac(lines[2:])
+        seeds = [int(i) for i in lines[0].split(':')[-1].split(' ') if i.strip()]
+        almanac = Almanac('\n'.join(lines[2:]))
 
         return seeds, almanac
 
@@ -259,3 +373,25 @@ class Solver(ProblemSolver):
         locations = [Seed(seed, almanac).location for seed in seeds]
 
         return min(locations)
+
+    def SolvePartTwo(self, data=None):
+        """
+        Instead of looking at the seed values in the almanac as explicit values, treat them as a range
+        and return the lowest location from there
+
+        :param list[int], Almanac data: the seeds we're meant to locate and the Almanac to help us locate them
+        :return int: the lowest location
+        """
+        if not data:
+            data = self.processed
+
+        # unpack the data
+        seeds, almanac = data
+
+        # treat the seed values we have input as ranges as well
+        seedRanges = []
+
+
+if __name__ == '__main__':
+    day = Solver()
+    day.Run()
