@@ -24,3 +24,16 @@ class defaultlist(list):
     def __setitem__(self, index, value):
         self._fill(index)
         return super(defaultlist, self).__setitem__(index, value)
+
+
+class DefaultIndexList(defaultlist):
+    """
+    Override the functionality of defaultlist to pass
+    the index we're appending to the fill function
+    """
+    def __init__(self):
+        super(DefaultIndexList, self).__init__(int)
+
+    def _fill(self, index):
+        while len(self) <= index:
+            self.append(self._cls(index))

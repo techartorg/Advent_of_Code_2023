@@ -1,7 +1,8 @@
+inL = []
 
+iters = 0
+maxIters = 10
 
-def myFunc(cls):
-    return cls()
-
-
-print(myFunc(int))
+while inL and iters < maxIters:
+    print('a')
+    iters += 1
