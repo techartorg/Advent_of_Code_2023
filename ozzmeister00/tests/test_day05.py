@@ -151,5 +151,21 @@ class Test(TestCase):
                           solutions.day05.Mapping.fromDetails(15, 20, 5)]
 
         results = mappings.mapSourceOverlaps([sourceRange])
-        test = [i in expectedRanges for i in results]
-        self.assertTrue(all(test))
+        test = all([i in expectedRanges for i in results]) and len(results) == len(expectedRanges)
+        self.assertTrue(test)
+
+        # test actual data Seed to Soil
+        sourceRanges = [solutions.day05.Range(79, 14),
+                        solutions.day05.Range(55, 13)]
+        mappingLines = ['50 98 2', '52 50 48']
+        testDataMappings = solutions.day05.Mappings(mappingLines)
+        results = testDataMappings.mapSourceOverlaps(sourceRanges)
+        expectedResults = [solutions.day05.Mapping.fromDetails(79, 81, 14),
+                           solutions.day05.Mapping.fromDetails(55, 57, 13)]
+        
+        test = all([i in expectedResults for i in results]) and len(results) == len(expectedResults)
+        self.assertTrue(test)
+
+        mappingLines = ['0 15 37', '37 52 2', '39 0 15']
+        testDataMappings = solutions.day05.Mappings(mappingLines)
+        results = testDataMappings.mapSourceOverlaps([r.dest for r in results])

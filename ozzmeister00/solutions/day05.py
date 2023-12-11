@@ -390,7 +390,7 @@ class Mapping(object):
         return False
 
 
-class Mappings(list):
+class Mappings(object):
     """
     Contains all the mappings from a given type-to-type connection
     """
@@ -431,7 +431,7 @@ class Mappings(list):
 
         :param list[Range] sourceRanges: all of the unmapped source ranges we need to map
 
-        :param list[Range]: all the destination ranges for the input source ranges
+        :param list[Mapping]: all the destination ranges for the input source ranges
         """
         # Next we need to split those seed ranges into range mappings of seed to soil, regardless of 
         # whether or not there are overlaps
@@ -440,20 +440,14 @@ class Mappings(list):
         unmappedSources = [i for i in sourceRanges]
         destinationRanges = []
 
-        maxIters = 10
-        iters = 0
-
-        while unmappedSources and iters < maxIters:
+        while unmappedSources:
             foundOverlap = False
             sourceRange = unmappedSources.pop(0)
-            iters += 1
 
             i = 0
 
             # iterate through the mappings, but only process one overlap at a time
-            while i < len(self.mappings) and not foundOverlap and iters < maxIters:
-                iters += 1  # safety
-                
+            while i < len(self.mappings) and not foundOverlap:                
                 currentMapping = self.mappings[i]
                 head, overlap, tail = currentMapping.mapRangeToDest(sourceRange)
                 
@@ -524,26 +518,7 @@ class Almanac(object):
 
         :returns Mapping: a list where the index maps the source value to a dest value
         """
-        return Mapping(rangeLines)
-
-    @staticmethod
-    def _buildMapDefaultIntList(self, rangeLines):
-        """
-        This is too slow for words with the actual dataset
-
-        :param rangeLines:
-        :return:
-        """
-        # the defaultintlist class should handle cases where the subsequent ranges
-        # overlap with parts of the list that have already been filled
-        outList = DefaultIntList()
-        for line in rangeLines:
-            if line.strip():
-                destStart, sourceStart, length = [int(i) for i in line.split(' ')]
-                for i in range(length):
-                    outList[sourceStart + i] = destStart + i
-
-        return outList
+        return Mappings(rangeLines)
 
 
 class Solver(ProblemSolver):
@@ -600,7 +575,20 @@ class Solver(ProblemSolver):
         # unpack the data
         seeds, almanac = data
 
+        # make Ranges for our input seeds
+        seedRanges = []
+        for i, v in list(enumerate(seeds))[::2]:
+            seedRanges.append(Range(v, seeds[i+1]))
 
+        soilRanges = [d.dest for d in almanac.seedToSoilMap.mapSourceOverlaps(seedRanges)]
+        fertilizerRanges = [d.dest for d in almanac.soilToFertilizerMap.mapSourceOverlaps(soilRanges)]
+        waterRanges = [d.dest for d in almanac.fertilizerToWaterMap.mapSourceOverlaps(fertilizerRanges)]
+        lightRanges = [d.dest for d in almanac.waterToLightMap.mapSourceOverlaps(waterRanges)]
+        temperatureRanges = [d.dest for d in almanac.lightToTemperatureMap.mapSourceOverlaps(lightRanges)]
+        humidityRanges = [d.dest for d in almanac.temperatureToHumidityMap.mapSourceOverlaps(temperatureRanges)]
+        locationRanges = [d.dest for d in almanac.humidityToLocationMap.mapSourceOverlaps(humidityRanges)]
+
+        return min([location.start for location in locationRanges])
 
 
 if __name__ == '__main__':
