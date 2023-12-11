@@ -58,9 +58,98 @@ class Test(TestCase):
         self.assertIsNone(tail)
 
     def test_mapping(self):
-        self.fail()
+        # test instantiation from a MappingLine
+        mapping = solutions.day05.Mapping("10 5 5")
+
+        # make sure we get the expected values
+        self.assertEqual(10, mapping.dest.start)
+        self.assertEqual(5, mapping.source.start)
+        self.assertEqual(5, mapping.offset)
+        self.assertEqual(5, mapping.source.length)
+
+        # test fromDetails
+        mappingFromDetails = solutions.day05.Mapping.fromDetails(5, 10, 5)
+
+        # make sure we get the expected values
+        self.assertEqual(10, mapping.dest.start)
+        self.assertEqual(5, mapping.source.start)
+        self.assertEqual(5, mapping.offset)
+        self.assertEqual(5, mapping.source.length)
+
+        # test fromRange
+        testRange = solutions.day05.Range(5, 5)
+        mappingFromRange = solutions.day05.Mapping.fromRange(testRange, 5)
+        self.assertEqual(10, mapping.dest.start)
+        self.assertEqual(5, mapping.source.start)
+        self.assertEqual(5, mapping.offset)
+        self.assertEqual(5, mapping.source.length)        
+
+        # test equivalency
+        self.assertEqual(mapping, mappingFromDetails)
+        self.assertEqual(mapping, mappingFromRange)
+        self.assertEqual(mappingFromRange, mappingFromDetails)
+
+        # test single-value destination finding
+        lowSource = 3
+        midSource = 6
+        highSource = 11
+
+        self.assertEqual(3, mapping.findDestination(lowSource))
+        self.assertEqual(11, mapping.findDestination(midSource))
+        self.assertEqual(11, mapping.findDestination(highSource))
+
+        # test overlap + low (Range, Mapping, None)
+        tailMiddleRange = solutions.day05.Range(0, 10)
+        
+        head, overlap, tail = mapping.mapRangeToDest(tailMiddleRange)
+        expectedHeadOverlap = solutions.day05.Range(0, 5)
+        expectedOverlap = solutions.day05.Mapping.fromDetails(5, 10, 5)
+        self.assertIsNone(tail)
+        self.assertEqual(expectedHeadOverlap, head)
+        self.assertEqual(expectedOverlap, overlap)
+
+        # test No Head
+        middleHeadRange = solutions.day05.Range(5, 10)
+        head, overlap, tail = mapping.mapRangeToDest(middleHeadRange)
+        expectedTailOverlap = solutions.day05.Range(10, 5)
+        expectedOverlap = solutions.day05.Mapping.fromDetails(5, 10, 5)
+        self.assertIsNone(head)
+        self.assertEqual(expectedOverlap, overlap)
+        self.assertEqual(expectedTailOverlap, tail)
+
+        # test Neither Head nor Tail (test range is fully enclosed by the target range)
+        middleRange = solutions.day05.Range(6, 2)
+        head, overlap, tail = mapping.mapRangeToDest(middleRange)
+        expectedOverlap = solutions.day05.Mapping.fromDetails(6, 11, 2)
+        self.assertIsNone(head)
+        self.assertEqual(expectedOverlap, overlap)
+        self.assertIsNone(tail)
+
+        # test no overlaps
+        noOverlapRange = solutions.day05.Range(0, 2)
+        self.assertTrue(mapping.doesRangeOverlapSource(noOverlapRange))
 
     def test_mappings(self):
-        self.fail()
-    
+        # make sure we can create a Mappings
+        lines = ['10 5 5',
+                 '20 15 5']
 
+        mappings = solutions.day05.Mappings(lines)
+        
+        # make sure we can find a destination value in a Mappings
+        self.assertEqual(10, mappings.findDestination(5))
+
+        # make sure we can find a destination value not in the Mappings
+        self.assertEqual(2, mappings.findDestination(2))
+
+        # make sure we can create the correct destination Ranges
+        # based on a source Range that overlaps two Mappings
+        sourceRange = solutions.day05.Range(0, 20)
+        expectedRanges = [solutions.day05.Mapping.fromDetails(0, 0, 5),
+                          solutions.day05.Mapping.fromDetails(5, 10, 5),
+                          solutions.day05.Mapping.fromDetails(10, 10, 5),
+                          solutions.day05.Mapping.fromDetails(15, 20, 5)]
+
+        results = mappings.mapSourceOverlaps([sourceRange])
+        test = [i in expectedRanges for i in results]
+        self.assertTrue(all(test))

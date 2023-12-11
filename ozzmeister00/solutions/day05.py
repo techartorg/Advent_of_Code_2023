@@ -220,6 +220,16 @@ class Range(object):
     def __str__(self):
         return f"{self.start}->{self.last}"
 
+    def valueInRange(self, value):
+        """
+        Test if an input value is contained by this range
+
+        :param int value:
+
+        :returns bool:
+        """
+        return self.start <= value <= self.last
+
     def overlaps(self, other):
         """
         Test if the input range overlaps with this one at all
@@ -229,10 +239,10 @@ class Range(object):
         :returns bool:
         """
         if isinstance(other, Range):
-            return other.last >= self.start >= other.start or \
-                   other.start <= self.last <= other.last or \
-                   (self.start <= other.start <= self.last and \
-                   self.last >= other.last >= self.start)
+            return other.valueInRange(self.start) or \
+                   other.valueInRange(self.last) or \
+                   (self.valueInRange(other.start) and \
+                   self.valueInRange(other.last))
 
         raise TypeError(f"Cannot test overlap with non-Range object {other}")
 
@@ -250,8 +260,6 @@ class Range(object):
         head = overlap = tail = None
         if isinstance(other, Range):
             if self.overlaps(other):
-                print(self)
-                print(other)
 
                 overlapStart = max(self.start, other.start)
                 overlapEnd = min(self.last, other.last)
@@ -280,28 +288,45 @@ class Range(object):
 
 
 class Mapping(object):
-    def __init__(self, rangeLine):
+    """
+    Helper object that maps an input source Range to a dest Range
+    """
+    def __init__(self, mappingLine):
         """
 
-        :param str rangeLine: of the form DestStart SourceStart Length
+        :param str mappingLine: of the form DestStart SourceStart Length
         """
-        destStart, sourceStart, length = [int(i) for i in rangeLine.split(' ')]
+        destStart, sourceStart, length = [int(i) for i in mappingLine.split(' ')]
         self.source = Range(sourceStart, length)
         self.dest = Range(destStart, length)
-        self.offset = self.dest - self.source
+        self.offset = destStart - sourceStart
 
     def __repr__(self):
-        return f"Range('{self.destStart} {self.sourceStart} {self.length}')"
+        return f"Mapping('{self.dest.start} {self.source.start} {self.source.length}')"
 
     def __str__(self):
         return self.__repr__()
+
+    def valueInSourceRange(self, value):
+        """
+        Return whether or not an input value is contained by the source
+        of this mapping
+
+        :param int other:
+
+        :returns bool:
+        """
+        return self.source.valueInRange(value)
 
     def findDestination(self, value):
         """
         :param int value: the source value
         :return int: the destination value in this mapping
         """
-        return (value - self.source.start) + self.offset        
+        if self.valueInSourceRange(value):
+            return value + self.offset        
+        
+        return value
 
     def mapRangeToDest(self, other):
         """
@@ -310,60 +335,25 @@ class Mapping(object):
 
         :param Range other:
 
-        :return Mapping, Mapping, Mapping:
+        :return Range, Mapping, Range: The head range that doesn't overlap with this mapping, the mapping between this
         """
-        start, length = other
-        end = start + length - 1
-        if start >= self.sourceStart:
-            # inRange = 3 4 5 6
-            # source = 2 3 4
-            return True
-        elif end <= self.sourceEnd:
-            # inRange = 1 2 3 4
-            # source = 2 3 4
-            return True
-        return False
+        head, overlap, tail = self.source.getOverlaps(other)
+        if overlap:
+            overlapMapping = Mapping.fromRange(overlap, self.offset)
 
-    def getSourceOverlapSource(self, source):
+            return head, overlapMapping, tail
+
+        return None, None, None
+
+    def doesRangeOverlapSource(self, other):
         """
-        Return multiple ranges, defining the mappings between all the parts that overlap with the current range
+        Test if the input Range overlaps the source of this Mapping
 
-        :param Range source: the range to whom we want to map from to this range
-        :return list[int], Range, list[int]: the head (before the input range overlaps with this one), 
-                                             the overlap, where we can map source to dest
-                                             the tail, where the input range extends past the end of the mapping in this source
-                                             If there is no head or tail, those will return None
+        :param Range other:
+        :returns bool:
         """
-        head = None
-        overlap = None
-        tail = None
+        return self.source.getOverlaps(other)
 
-        print("Get Overlaps", source, self)
-
-        if self.doesSourceOverlapSource(source):
-            start, length = source
-            end = start + length
-            overlapStart = max(self.sourceStart, start)
-            overlapEnd = min(self.sourceEnd, end)
-            overlapLength = overlapEnd - overlapStart
-            destOffset = self.destStart - self.sourceStart
-            destStart = overlapStart + destOffset
-
-            # if the overlap start is above the input start
-            # that means we have a head section of the overlap
-            if overlapStart > start:
-                head = [start, overlapStart - start]
-
-            # if the overlap end is below the input end
-            # that means we have a tail section of the overlap
-            if overlapEnd < end:
-                tail = [overlapEnd + 1, end - overlapEnd]
-
-            # the actual RangeOverlap
-            overlap = Range.fromDetails(overlapStart, destStart, overlapLength)
-
-        return head, overlap, tail
-        
     @staticmethod
     def fromDetails(sourceStart, destStart, length):
         """
@@ -373,14 +363,27 @@ class Mapping(object):
         :param int destStart:
         :param int length:
         """
-        return Range(f"{destStart} {sourceStart} {length}")
+        return Mapping(f"{destStart} {sourceStart} {length}")
+
+    @staticmethod
+    def fromRange(sourceRange, offset):
+        """
+        Make a new mapping from an input Range, with an offset
+
+        :param Range sourceRange:
+        :param int offset:
+
+        :return Mapping:
+        """
+        destStart = sourceRange.start + offset
+        return Mapping.fromDetails(sourceRange.start, destStart, sourceRange.length)
 
     def __eq__(self, other):
         """
-        :param Range other: the test range
+        :param Mapping other: the test Mapping
         :return bool: if the input other matches ourself
         """
-        if isinstance(other, Range):
+        if isinstance(other, Mapping):
             return self.source == other.source and \
                    self.dest == other.dest
 
@@ -407,28 +410,35 @@ class Mappings(list):
         :param int source: the source we're starting from
         :return int: the destination we're trying to get to
         """
-        for range in self.ranges:
-            if range.isInRange(source):
-                return range.findDestination(source)
+        for mapping in self.mappings:
+            if mapping.valueInSourceRange(source):
+                return mapping.findDestination(source)
 
         return source
 
+    @property
+    def destinations(self):
+        """
+        Just return a list of all the destination ranges contained by this Mappings
+        """
+        return [dest for mapping.dest in self.mappings]
+
     def mapSourceOverlaps(self, sourceRanges):
         """
-        Given an input list of list[int] start, length
-        Return all of the ranges mapping all of the inputs to somewhere
-        in the map's destinations
+        Map all the values in the input source Ranges to destination values
+        regardless of whether or not they're contained in the mapping
+        (so that some output Mappings will be 1:1)
 
-        :param list[int] sourceRanges: all of the unmapped source ranges we need to generate
+        :param list[Range] sourceRanges: all of the unmapped source ranges we need to map
 
-        :param list[Range]: a complete mapping of all the input source ranges to destination values
+        :param list[Range]: all the destination ranges for the input source ranges
         """
         # Next we need to split those seed ranges into range mappings of seed to soil, regardless of 
         # whether or not there are overlaps
 
         # copy the list over, we don't want things to get weird
         unmappedSources = [i for i in sourceRanges]
-        resultantRanges = []
+        destinationRanges = []
 
         maxIters = 10
         iters = 0
@@ -438,23 +448,19 @@ class Mappings(list):
             sourceRange = unmappedSources.pop(0)
             iters += 1
 
-            print(unmappedSources)
-
             i = 0
-            # iterate through the mappings, but only process one overlap at a time
-            while i < len(self.ranges) and not foundOverlap and iters < maxIters:
-                iters += 1  # safety
 
-                print(i, len(self.ranges), not foundOverlap)
+            # iterate through the mappings, but only process one overlap at a time
+            while i < len(self.mappings) and not foundOverlap and iters < maxIters:
+                iters += 1  # safety
                 
-                currentRange = self.ranges[i]
-                head, overlap, tail = currentRange.getSourceOverlapSource(sourceRange)
+                currentMapping = self.mappings[i]
+                head, overlap, tail = currentMapping.mapRangeToDest(sourceRange)
                 
                 if overlap:
-                    print(head, overlap, tail)
                     foundOverlap = True
                     # then add it to the mapping
-                    resultantRanges.append(overlap)
+                    destinationRanges.append(overlap)
 
                     # if there was a tail of the overlap, return it back to the list of unmapped for later processing
                     if head:
@@ -462,16 +468,15 @@ class Mappings(list):
                     # same with the tail
                     if tail:
                         unmappedSources.append(tail)
+
                 i += 1
 
             # if no overlap was found, just create a range mapping Start to itself
             # so we can continue using Range objects for subsequent overlap determinations
             if not foundOverlap:
-                print("No overlap found, making default range")
-                start, length = sourceRange
-                resultantRanges.append(Range.fromDetails(start, start, length))
+                destinationRanges.append(Mapping.fromDetails(sourceRange.start, sourceRange.start, sourceRange.length))
 
-        return resultantRanges
+        return destinationRanges
 
 
 class Almanac(object):
@@ -535,7 +540,6 @@ class Almanac(object):
         for line in rangeLines:
             if line.strip():
                 destStart, sourceStart, length = [int(i) for i in line.split(' ')]
-                print(destStart, sourceStart, length)
                 for i in range(length):
                     outList[sourceStart + i] = destStart + i
 
