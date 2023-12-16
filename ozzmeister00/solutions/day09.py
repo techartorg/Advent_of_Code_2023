@@ -74,7 +74,7 @@ from utils.solver import ProblemSolver
 
 class Solver(ProblemSolver):
     def __init__(self):
-        super(Solver, self).__init__(4)
+        super(Solver, self).__init__(9)
 
         self.testDataAnswersPartOne = []
 
