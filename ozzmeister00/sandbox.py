@@ -1,8 +1,10 @@
-inL = []
+class A(object):
+    SOME_VAR = 'a'
 
-iters = 0
-maxIters = 10
+    def a(self):
+        print(self.SOME_VAR)
 
-while inL and iters < maxIters:
-    print('a')
-    iters += 1
+a = A()
+a.a()
+A.SOME_VAR = 'b'
+a.a()
