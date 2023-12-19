@@ -93,6 +93,7 @@ How many steps does it take before you're only on nodes that end with Z?
 
 """
 
+import math
 
 from utils.solver import ProblemSolver
 
@@ -174,20 +175,21 @@ class Solver(ProblemSolver):
 
         sequence, mapping = data
 
-        steps = 0
-        instructionPointer = 0
-        maxInstructions = len(sequence)
-        currentNodes = [a for a in mapping if a.endswith('A')]
+        startNodes = [a for a in mapping if a.endswith('A')]
         endNodes = [z for z in mapping if z.endswith('Z')]
 
         # safety check
-        assert len(currentNodes) == len(endNodes)
+        assert len(startNodes) == len(endNodes)
 
-        while not allNodesTerminal(currentNodes):
-            steps += 1
-            currentNodes = [mapping[current][sequence[instructionPointer]] for current in currentNodes]
+        # get all the steps it takes to reach all the starting nodes
+        nodeSteps = [self.tracePath(sequence, mapping, n, endNodeCondition='Z') for n in startNodes]
 
-            instructionPointer += 1
-            instructionPointer %= maxInstructions
+        # this effectively gives us their "frequency"
+        # and we can find the point at which all of these frequencies resonate by finding their Least Common Multiple
 
-        return steps
+        # which is blessedly provided to use by the Python Standard Library in 3.9 and above
+        return math.lcm(*nodeSteps)
+
+
+if __name__ == '__main__':
+    Solver().Run()
