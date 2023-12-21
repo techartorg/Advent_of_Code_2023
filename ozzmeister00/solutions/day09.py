@@ -96,7 +96,43 @@ If you find the next value for each history in this example and add them
 together, you get 114.
 
 Analyze your OASIS report and extrapolate the next value for each history. What 
-is the sum of these extrapolated values?"""
+is the sum of these extrapolated values?
+
+1819125966
+
+--- Part Two ---
+
+Of course, it would be nice to have even more history included in your report. 
+Surely it's safe to just extrapolate backwards as well, right?
+
+For each history, repeat the process of finding differences until the sequence 
+of differences is entirely zero. Then, rather than adding a zero to the end and 
+filling in the next values of each previous sequence, you should instead add a 
+zero to the beginning of your sequence of zeroes, then fill in new first values 
+for each previous sequence.
+
+In particular, here is what the third example history looks like when 
+extrapolating back in time:
+
+5  10  13  16  21  30  45
+  5   3   3   5   9  15
+   -2   0   2   4   6
+      2   2   2   2
+        0   0   0
+
+Adding the new values on the left side of each sequence from bottom to top 
+eventually reveals the new left-most history value: 5.
+
+Doing this for the remaining example data above results in previous values of -3
+ for the first history and 0 for the second history. Adding all three new values
+ together produces 2.
+
+Analyze your OASIS report again, this time extrapolating the previous value for 
+each history. What is the sum of these extrapolated values?
+
+3409853582 too high
+2118 too high
+"""
 
 
 from utils.solver import ProblemSolver
@@ -106,32 +142,81 @@ class Solver(ProblemSolver):
     def __init__(self):
         super(Solver, self).__init__(9)
 
-        self.testDataAnswersPartOne = []
+        self.testDataAnswersPartOne = [114]
+        self.testDataAnswersPartTwo = [2]
 
     def ProcessInput(self, data=None):
         """
 
         :param str data: the raw input data
 
-        :returns: 
+        :returns list[int]: the history of each value
         """
         if not data:
             data = self.rawData
 
-        processed = None
+        return [[int(i) for i in line.split(' ')] for line in data.splitlines()]
 
-        return processed 
+    def buildDifferences(self, sequence):
+        """
+        Given an input sequence of integers, build an array of the differences 
+        between each of the values in that sequence until all the differences are 0
+
+        :param list[int] sequence:
+
+        :return list[list[[int]]: 
+        """
+
+    def extrapolateValueForward(self, sequence):
+        """
+        Given an input sequence of integers, determine the next value in the 
+sequence
+        by reducing finding the differences in values and extrapolating back up
+
+        :param list[int] sequence: the historical sequence of a given value
+        :param bool reverse: if true, will reverse the sequences before extrapolating the values forward
+
+        :return int: the next value in the sequence
+        """
+
+        differences = [sequence]
+
+        # keep making a new list of differences between values as long as 
+        # some of the differences are not zero
+        while not all([i == 0 for i in differences[-1]]):
+            newDifference = []
+            for i, value in enumerate(differences[-1][:-1]):
+                newDifference.append(differences[-1][i+1] - value)
+            differences.append(newDifference)
+
+        # reverse the difference array to make some other math easier
+        differences = differences[::-1]
+
+        # then extrapolate back up
+        for i, difference in enumerate(differences[:-1]):
+            extrapolate = differences[i+1][-1] + difference[-1]
+            differences[i+1].append(extrapolate)
+
+        return differences[-1][-1]
 
     def SolvePartOne(self, data=None):
         """
+        :param list[int] data: the values and their histories
 
-        :param list[Something] data: 
-
-        :return int: the result
+        :return int: the sum of the extrapolated values
         """
         if not data:
             data = self.processed
 
-        result = 0
+        return sum([self.extrapolateValue(sequence) for sequence in data])
 
-        return result
+    def SolvePartTwo(self, data=None):
+        """
+        :param list[int] data: the values and their histories
+
+        :return int: the sum of the extrapolated values
+        """
+        if not data:
+            data = self.processed
+
+        return sum([self.extrapolateValue(sequence, reverse=False) for sequence in data])
