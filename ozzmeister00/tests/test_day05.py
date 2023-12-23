@@ -2,7 +2,8 @@ from unittest import TestCase
 
 import solutions.day05
 
-class Test(TestCase):
+
+class TestDay05(TestCase):
     def test_range(self):
         # make sure that a range can be created through both methods and its creation can fail
         a = solutions.day05.Range("10 5")

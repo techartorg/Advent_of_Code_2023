@@ -35,48 +35,36 @@ Consider your entire calibration document. What is the sum of all of the calibra
 
 import sys
 
-from utils.solver import ProblemSolver
+import solver.runner
+import solver.solver
 
 import utils.constants
 
 
+class Solver(solver.solver.ProblemSolver):
+    def __init__(self, rawData=None):
+        super(Solver, self).__init__(1, rawData=rawData)
 
-class Day01Solver(ProblemSolver):
-    def __init__(self):
-        super(Day01Solver, self).__init__(1)
-
-        self.testDataAnswersPartOne = [142]
-        self.testDataAnswersPartTwo = [281]
-
-    def ProcessInput(self, data=None):
+    def ProcessInput(self):
         """
-        Process the input data into a list of lines
+        Processes the stored raw data into self.processed
 
-        :param str data:
         :returns list[str]: The list of calibration lines
         """
-        if not data:
-            data = self.rawData
-
-        processed = data.splitlines(keepends=False)
+        processed = self.rawData.splitlines(keepends=False)
 
         return processed
 
-    def SolvePartOne(self, data=None):
+    def SolvePartOne(self):
         """
-        :param list[str] data:
-
         Parse out numbers from the calibration lines, get the first and last numbers as a single number
         then return the sum of those numbers
 
         :returns int: the sum of the calibration values
         """
-        if not data:
-            data = self.processed
-
         numbers = []
 
-        for line in data:
+        for line in self.processed:
             local = []
             for i in line:
                 if i.isnumeric():
@@ -88,7 +76,7 @@ class Day01Solver(ProblemSolver):
 
         return sum(numbers)
 
-    def SolvePartTwo(self, data=None):
+    def SolvePartTwo(self):
         """
         :param list[str] data:
 
@@ -99,12 +87,9 @@ class Day01Solver(ProblemSolver):
 
         :returns int: the sum of the calibration values
         """
-        if not data:
-            data = self.processed
-
         numbers = []
 
-        for line in data:
+        for line in self.processed:
             # build a dict mapping numbers to a list of the indexes at which the numbers are found
             localIndexes = {k: [] for k in range(10)}
 
@@ -158,5 +143,6 @@ class Day01Solver(ProblemSolver):
 
 
 if __name__ == '__main__':
-    day01 = Day01Solver()
-    day01.Run()
+    daySolver = Solver()
+    if solver.runner.RunTests(daySolver.day):
+        daySolver.Run()

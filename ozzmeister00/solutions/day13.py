@@ -88,41 +88,32 @@ first pattern's vertical line has 5 columns to its left and the second pattern's
 Find the line of reflection in each of the patterns in your notes. What number 
 do you get after summarizing all of your notes?
 """
+import solver.runner
+import solver.solver
 
 
-from utils.solver import ProblemSolver
+class Solver(solver.solver.ProblemSolver):
+    def __init__(self, rawData=None):
+        super(Solver, self).__init__(13, rawData=rawData)
 
-
-class Solver(ProblemSolver):
-    def __init__(self):
-        super(Solver, self).__init__(13)
-
-        self.testDataAnswersPartOne = []
-
-    def ProcessInput(self, data=None):
+    def ProcessInput(self):
         """
-
-        :param str data: the raw input data
-
-        :returns: 
+        :returns:
         """
-        if not data:
-            data = self.rawData
-
         processed = None
+        return processed
 
-        return processed 
-
-    def SolvePartOne(self, data=None):
+    def SolvePartOne(self):
         """
-
-        :param list[Something] data: 
 
         :return int: the result
         """
-        if not data:
-            data = self.processed
-
         result = 0
 
         return result
+
+
+if __name__ == '__main__':
+    daySolver = Solver()
+    if solver.runner.RunTests(daySolver.day):
+        daySolver.Run()

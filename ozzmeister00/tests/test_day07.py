@@ -2,7 +2,10 @@ from unittest import TestCase
 
 import solutions.day07
 
-class Test(TestCase):
+TEST_DATA = "32T3K 765\nT55J5 684\nKK677 28\nKTJJT 220\nQQQJA 483"
+
+
+class TestDay07Helpers(TestCase):
     def test_card(self):
         # test instantiation from string
         card = solutions.day07.Card('A')
@@ -91,12 +94,11 @@ class Test(TestCase):
             self.assertEqual(type(solutions.day07.Hand(cardString).ranking), expectedType, msg=f"{cardString} did not rank to {expectedType}")
 
 
-
-class TestPartTwo(TestCase):
+class TestDay07PartTwo(TestCase):
     def setUpTest(self):
         solutions.day07.Card.CARD_RANKS = solutions.day07.PARTTWO_RANKS 
 
-    def test_partTwo(self):
+    def test_partTwo_ranks(self):
         cardStrings = [('JJ553 526', solutions.day07.FourOfAKind),
                        ('JJJJJ 302', solutions.day07.FiveOfAKind),
                        ('JJJJ8 466', solutions.day07.FiveOfAKind),
@@ -114,6 +116,17 @@ class TestPartTwo(TestCase):
         self.assertEqual(higher.ranking, solutions.day07.FourOfAKind)
         self.assertTrue(higher > lower)
 
-    def tearDownTest(self):
-        solutions.day07.Card.CARD_RANKS = solutions.day07.PARTONE_RANKS 
+    def test_partTwo(self):
+        solver = solutions.day07.Solver(rawData=TEST_DATA)
+        expected = 5905
+        self.assertEqual(expected, solver.SolvePartTwo())
 
+    def tearDownTest(self):
+        solutions.day07.Card.CARD_RANKS = solutions.day07.PARTONE_RANKS
+
+
+class TestDay07PartOne(TestCase):
+    def testPartOne(self):
+        solver = solutions.day07.Solver(rawData=TEST_DATA)
+        expected = 6440
+        self.assertEqual(expected, solver.SolvePartOne())

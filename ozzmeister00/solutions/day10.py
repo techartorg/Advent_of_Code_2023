@@ -124,38 +124,32 @@ take to get from the starting position to the point farthest from the starting
 position?
 """
 
-from utils.solver import ProblemSolver
+import solver.runner
+import solver.solver
 
 
-class Solver(ProblemSolver):
-    def __init__(self):
-        super(Solver, self).__init__(10)
+class Solver(solver.solver.ProblemSolver):
+    def __init__(self, rawData=None):
+        super(Solver, self).__init__(10, rawData=rawData)
 
-        self.testDataAnswersPartOne = []
-
-    def ProcessInput(self, data=None):
+    def ProcessInput(self):
         """
-
-        :param str data: the rawinput data
-
         :returns:
         """
-        if not data:
-            data= self.rawData
-
         processed = None
-
         return processed
-    def SolvePartOne(self, data=None):
-        """
 
-        :paramlist[Something] data:
+    def SolvePartOne(self):
+        """
 
         :return int: the result
         """
-        if not data:
-            data = self.processed
-
         result = 0
 
         return result
+
+
+if __name__ == '__main__':
+    daySolver = Solver()
+    if solver.runner.RunTests(daySolver.day):
+        daySolver.Run()

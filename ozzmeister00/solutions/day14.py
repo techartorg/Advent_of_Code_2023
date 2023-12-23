@@ -73,41 +73,32 @@ this example, the total load is 136.
 Tilt the platform so that the rounded rocks all roll north. Afterward, what is 
 the total load on the north support beams?
 """
+import solver.runner
+import solver.solver
 
 
-from utils.solver import ProblemSolver
+class Solver(solver.solver.ProblemSolver):
+    def __init__(self, rawData=None):
+        super(Solver, self).__init__(14, rawData=rawData)
 
-
-class Solver(ProblemSolver):
-    def __init__(self):
-        super(Solver, self).__init__(14)
-
-        self.testDataAnswersPartOne = []
-
-    def ProcessInput(self, data=None):
+    def ProcessInput(self):
         """
-
-        :param str data: the raw input data
-
-        :returns: 
+        :returns:
         """
-        if not data:
-            data = self.rawData
-
         processed = None
+        return processed
 
-        return processed 
-
-    def SolvePartOne(self, data=None):
+    def SolvePartOne(self):
         """
-
-        :param list[Something] data: 
 
         :return int: the result
         """
-        if not data:
-            data = self.processed
-
         result = 0
 
         return result
+
+
+if __name__ == '__main__':
+    daySolver = Solver()
+    if solver.runner.RunTests(daySolver.day):
+        daySolver.Run()

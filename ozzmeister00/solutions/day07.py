@@ -126,7 +126,8 @@ Using the new joker rule, find the rank of every hand in your set. What are the 
 
 import collections
 
-from utils.solver import ProblemSolver
+import solver.runner
+import solver.solver
 
 PARTONE_RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
 PARTTWO_RANKS = ['J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A']
@@ -458,40 +459,29 @@ class Hand(object):
         return TypeError(f"Comparison between type {type(other)} and Hand not supported.")
 
 
-class Solver(ProblemSolver):
-    def __init__(self):
-        super(Solver, self).__init__(7)
+class Solver(solver.solver.ProblemSolver):
+    def __init__(self, rawData=None):
+        super(Solver, self).__init__(7, rawData=rawData)
 
-        self.testDataAnswersPartOne = [6440]
-        self.testDataAnswersPartTwo = [5905]
-
-    def ProcessInput(self, data=None):
+    def ProcessInput(self):
         """
 
         :param str data: the raw input data
 
         :return str data: since most of the processing happens in the Hand class
-        just pass the string through so we can re-instantiate the hand in Part 2
+        just pass the string through, so we can re-instantiate the hand in Part 2
         with different settings
         """
-        if not data:
-            data = self.rawData
+        return self.rawData
 
-        return data
-
-    def SolvePartOne(self, data=None):
+    def SolvePartOne(self):
         """
-        Rank all of the input hands, and get their winnings based on their ranks
-
-        :param list[Hand] data: the hands, ranked
+        Rank all the input hands, and get their winnings based on their ranks
 
         :return int: the total winnings for all of these hands
         """
-        if not data:
-            data = self.processed
-
         # instatiate the hands here based on them being in part 2
-        hands = [Hand(i) for i in data.splitlines() if i.strip()]
+        hands = [Hand(i) for i in self.rawData.splitlines() if i.strip()]
 
         result = 0
 
@@ -502,21 +492,17 @@ class Solver(ProblemSolver):
 
         return result
 
-    def SolvePartTwo(self, data=None):
+    def SolvePartTwo(self):
         """
         Swap behavior over to Part Two, where Js are wild and 
-
 
         :returns int: the total winnings from these hands
         """
         # change out the card rankings
         Card.CARD_RANKS = PARTTWO_RANKS
 
-        if not data:
-            data = self.processed
-
         # instatiate the hands here based on them being in part 2
-        hands = [Hand(i, jokersWild=True) for i in data.splitlines() if i.strip()]
+        hands = [Hand(i, jokersWild=True) for i in self.rawData.splitlines() if i.strip()]
 
         result = 0
 
@@ -530,4 +516,6 @@ class Solver(ProblemSolver):
 
 
 if __name__ == '__main__':
-    Solver().Run()
+    daySolver = Solver()
+    if solver.runner.RunTests(daySolver.day):
+        daySolver.Run()
