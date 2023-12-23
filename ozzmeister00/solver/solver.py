@@ -4,14 +4,14 @@ Stores out problem-solver class
 
 import os
 
-from . import constants
+from utils import constants
 
 
 class ProblemSolver(object):
     """
     Common class for loading and processing data from each day's challenge
     """
-    def __init__(self, day):
+    def __init__(self, inputData):
         """
         Finds the input data file for this day, and loads the raw contents of that file into
         the rawData property of the instance
