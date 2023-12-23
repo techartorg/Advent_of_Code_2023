@@ -166,19 +166,6 @@ class Solver(ProblemSolver):
 
         :return list[list[[int]]: 
         """
-
-    def extrapolateValueForward(self, sequence):
-        """
-        Given an input sequence of integers, determine the next value in the 
-sequence
-        by reducing finding the differences in values and extrapolating back up
-
-        :param list[int] sequence: the historical sequence of a given value
-        :param bool reverse: if true, will reverse the sequences before extrapolating the values forward
-
-        :return int: the next value in the sequence
-        """
-
         differences = [sequence]
 
         # keep making a new list of differences between values as long as 
@@ -189,12 +176,44 @@ sequence
                 newDifference.append(differences[-1][i+1] - value)
             differences.append(newDifference)
 
+        return differences
+
+    def extrapolateValueForward(self, sequence):
+        """
+        Given an input sequence of integers, determine the next value in the sequence
+        by reducing finding the differences in values and extrapolating back up
+
+        :param list[int] sequence: the historical sequence of a given value
+        :param bool reverse: if true, will reverse the sequences before extrapolating the values forward
+
+        :return int: the next value in the sequence
+        """
         # reverse the difference array to make some other math easier
-        differences = differences[::-1]
+        differences = self.buildDifferences(sequence)[::-1]
 
         # then extrapolate back up
         for i, difference in enumerate(differences[:-1]):
             extrapolate = differences[i+1][-1] + difference[-1]
+            differences[i+1].append(extrapolate)
+
+        return differences[-1][-1]
+
+    def extrapolateValueBackward(self, sequence):
+        """
+        Given an input sequence of integers, determine the next value in the sequence
+        by reducing finding the differences in values and extrapolating back up
+
+        :param list[int] sequence: the historical sequence of a given value
+        :param bool reverse: if true, will reverse the sequences before extrapolating the values forward
+
+        :return int: the previous value in the sequence
+        """
+        # reverse the elements in the array, then reverse the array to make some math easier
+        differences = [sequence[::-1] for sequence in self.buildDifferences(sequence)][::-1]
+
+        # then extrapolate back up
+        for i, difference in enumerate(differences[:-1]):
+            extrapolate = differences[i+1][-1] - difference[-1]
             differences[i+1].append(extrapolate)
 
         return differences[-1][-1]
@@ -208,7 +227,7 @@ sequence
         if not data:
             data = self.processed
 
-        return sum([self.extrapolateValue(sequence) for sequence in data])
+        return sum([self.extrapolateValueForward(sequence) for sequence in data])
 
     def SolvePartTwo(self, data=None):
         """
@@ -219,4 +238,4 @@ sequence
         if not data:
             data = self.processed
 
-        return sum([self.extrapolateValue(sequence, reverse=False) for sequence in data])
+        return sum([self.extrapolateValueBackward(sequence) for sequence in data])
