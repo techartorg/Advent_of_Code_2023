@@ -21,7 +21,8 @@ def main():
     args = parser.parse_args()
 
     if args.day.isnumeric():
-        solver.runner.RunDay(int(args.day))
+        if solver.runner.RunTests(args.day):
+            solver.runner.RunDay(int(args.day))
     else:
         raise IOError(f"Day must be a numeral")
 

@@ -21,7 +21,6 @@ def Main():
     Discover all the tests in the tests directory adjacent this file and run them
     """
     parser = argparse.ArgumentParser(prog="AoC Solver", description="Run either all tests or the tests for a specific day")
-    parser.add_argument("-all")
     parser.add_argument("-d", "--day")
 
     args = parser.parse_args()
@@ -29,7 +28,7 @@ def Main():
     if args.day:
         day = int(args.day)
         solver.runner.RunTests(day)
-    elif args.all:
+    else:
         loader = unittest.TestLoader()
         suite = loader.discover(PROJECT_DIR)
 
