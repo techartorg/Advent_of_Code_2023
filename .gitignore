@@ -162,3 +162,4 @@ cython_debug/
 # -- don't upload your question inputs!
 input.txt
 _test_input_*.txt
+test_input.txt
