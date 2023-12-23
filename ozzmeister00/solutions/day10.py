@@ -126,6 +126,94 @@ position?
 
 import solver.runner
 import solver.solver
+import utils.math
+
+
+class Pipe(str):
+    CONNECITON_MAPPING = {'|': [utils.math.Grid2D.North, utils.math.Grid2D.South],
+                          '-': [utils.math.Grid2D.West, utils.math.Grid2D.East],
+                          'L': [utils.math.Grid2D.North, utils.math.Grid2D.East],
+                          'J': [utils.math.Grid2D.West, utils.math.Grid2D.North],
+                          '7': [utils.math.Grid2D.West, utils.math.Grid2D.South],
+                          'F': [utils.math.Grid2D.South, utils.math.Grid2D.East],
+                          '.': (),
+                          'S': ()}
+
+    def __new__(cls, character):
+        """
+        :param str character: which character represents this pipe
+        """
+        if not character in Pipe.CONNECITON_MAPPING:
+            raise ValueError(f"Character {character} is not a valid pipe ID")
+
+        return super().__new__(cls, character)
+
+    def __init__(self, character):
+        self.connectors = []  # in which directions this pipe connects
+        self.updateConnectors(character)
+        self.connections = []  # indexes of the points in the grid to which this pipe connects
+        self.distanceFromStart = -1 # init this since we'll need it later and we dont' want to make a whole separate Grid2D for it
+
+    def updateConnectors(self, character):
+        """
+        Update the connectors of the pipe to match the input character
+
+        :param str character: the pipe charcter whose connections we want to match
+        """
+        self.connectors = Pipe.CONNECITON_MAPPING[character]
+
+
+class PipeNetwork(utils.math.Grid2D):
+    def __init__(self, rows):
+        """
+        Create a network of pipes based on an input list of rows of pipes
+
+        :param list[str] rows: all the rows of the pipe network as strings
+        """
+        width = len(rows[0])
+        pipes = [Pipe(i) for i in ''.join(rows)]
+        super(PipeNetwork, self).__init__(width, data=pipes)
+        
+        # find the S, and figure out what it's connections should be
+        startPoints = self.findCoords('S')
+        assert len(startPoints) == 1
+
+        sCoord = startPoints[0]
+
+        opposites = self.orthoNeighbors[::-1]
+
+        sConnectors = []
+
+        for i, direction in enumerate(self.orthoNeighbors):
+            localNeighbor = utils.math.Int2(sCoord + direction)
+            if self.coordsInBounds(localNeighbor):
+                print(localNeighbor, '->', self[localNeighbor].connectors)
+                if opposites[i] in self[localNeighbor].connectors:
+                    sConnectors.append(opposites[i])
+
+        print(sConnectors)
+        self[sCoord].connectors = sConnectors
+
+        # update each pipe with all of its neighbors
+        for i, pipe in self.enumerateCoords():
+            for connector in self[i].connectors:
+                localNeighbor = utils.math.Int2(connector + i)
+                if self.coordsInBounds(localNeighbor):
+                    self[i].connections.append(localNeighbor)
+
+        # once we've done that, zoop through the connections from the start point and update their 
+        # distance from the start point
+        self.traversePaths(sCoord, 0)
+    
+    def traversePaths(self, coord, distanceSoFar):
+        """
+        For each of the connections in this pipe, traverse all the unvisited connections
+        from this point
+        """
+        self[coord].distanceFromStart = distanceSoFar
+        for connection in self[coord].connections:
+            if self[connection].distanceFromStart < 0:
+                self.traversePaths(connection, distanceSoFar + 1)
 
 
 class Solver(solver.solver.ProblemSolver):
@@ -134,15 +222,17 @@ class Solver(solver.solver.ProblemSolver):
 
     def ProcessInput(self):
         """
-        :returns:
+        Take the input and turn it into a PipeNetwork
+        :returns PipeNetwork:
         """
-        processed = None
-        return processed
+        return PipeNetwork(list(self.rawData.splitlines()))
 
     def SolvePartOne(self):
         """
+        Given the processed pipe network, determine the furthest point away from the start point
+        that anything can be
 
-        :return int: the result
+        :return int: the furthest distance away from the start that any pipe could be
         """
         result = 0
 

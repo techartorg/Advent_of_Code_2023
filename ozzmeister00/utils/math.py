@@ -398,6 +398,13 @@ class Grid2D(list):
         """
         return coord.x == 0 or coord.y == 0 or coord.x == self.width - 1 or coord.y == self.height - 1
 
+    def enumerateCoords(self):
+        """
+        :yield (coords, object): the coord and object for each item in the grid
+        """
+        for i, obj in enumerate(self):
+            yield self.indexToCoords(i), obj
+
     def enumerateOrthoLocalNeighbors(self, coords):
         """
         Returns a list of tuples of coordinate, value for each valid neighbor
