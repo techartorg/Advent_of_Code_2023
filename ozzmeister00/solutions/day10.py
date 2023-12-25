@@ -229,14 +229,12 @@ class PipeNetwork(utils.math.Grid2D):
             else:
                 self[next].distanceFromStart = min(self[next].distanceFromStart, distanceSoFar)
 
-            nextIndex = abs(1 - self[next].connections.index(prev))
-            print(nextIndex)
+            nextIndex = min(abs(1 - self[next].connections.index(prev)), len(self[next].connections) - 1)
 
             prev = next
-            print(self[prev].connections)
             next = self[prev].connections[nextIndex]
 
-            distanceSoFar + 1
+            distanceSoFar += 1
         
     def distancesAsString(self):
         """

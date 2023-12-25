@@ -36,8 +36,8 @@ class TestPipeNetwork(TestCase):
 
 class TestDay10(TestCase):
     def test_part01(self):
-        testData = [('''..F7.\n.FJ|.\nSJ.L7\n|F--J\nLJ...''', 8),
-                    ('''.....\n.S-7.\n.|.|.\n.L-J.\n.....''', 4)]
+        testData = [('''.....\n.S-7.\n.|.|.\n.L-J.\n.....''', 4),
+                    ('''..F7.\n.FJ|.\nSJ.L7\n|F--J\nLJ...''', 8)]
 
         for test, expected in testData:
             solver = solutions.day10.Solver(rawData=test)

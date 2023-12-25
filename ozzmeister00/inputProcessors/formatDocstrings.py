@@ -20,9 +20,16 @@ def formatDocstring(filePath):
         contents = fh.read()
 
     with open(filePath, 'w') as fh:
+        docStringStart = False
         for graf in contents.splitlines():
             if graf.strip():
-                for line in textwrap.wrap(graf, width=80, replace_whitespace=False, drop_whitespace=False):
+                if '"""' in graf:
+                    docStringStart = not docStringStart
+                if docStringStart:
+                    for line in textwrap.wrap(graf, width=80, replace_whitespace=False, drop_whitespace=False):
+                        fh.write(line)
+                        fh.write('\n')
+                else:
                     fh.write(line)
                     fh.write('\n')
             else:

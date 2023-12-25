@@ -101,8 +101,8 @@ class ProblemSolver(object):
         self.processed = self.ProcessInput()
         try:
             self.partOneResult = self.SolvePartOne()
-            self.partTwoResult = self.SolvePartTwo()
             print('Part 1 Result: ', self.partOneResult)
+            self.partTwoResult = self.SolvePartTwo()
             print('Part 2 Result: ', self.partTwoResult)
         except NotImplementedError:
             print("Solving not complete due to some parts not being implemented properly")
