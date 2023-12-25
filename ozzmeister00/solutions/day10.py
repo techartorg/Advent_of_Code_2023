@@ -132,10 +132,11 @@ import utils.math
 class Pipe(str):
     CONNECITON_MAPPING = {'|': [utils.math.Grid2D.North, utils.math.Grid2D.South],
                           '-': [utils.math.Grid2D.West, utils.math.Grid2D.East],
-                          'L': [utils.math.Grid2D.North, utils.math.Grid2D.East],
-                          'J': [utils.math.Grid2D.West, utils.math.Grid2D.North],
-                          '7': [utils.math.Grid2D.West, utils.math.Grid2D.South],
-                          'F': [utils.math.Grid2D.South, utils.math.Grid2D.East],
+                           # the north/souths are flipped for the corners because Grid2D puts. 0,0 in the top left, and "North" is actually down
+                          'L': [utils.math.Grid2D.South, utils.math.Grid2D.East],
+                          'J': [utils.math.Grid2D.West, utils.math.Grid2D.South],
+                          '7': [utils.math.Grid2D.West, utils.math.Grid2D.North],
+                          'F': [utils.math.Grid2D.North, utils.math.Grid2D.East],
                           '.': (),
                           'S': ()}
 
@@ -173,47 +174,76 @@ class PipeNetwork(utils.math.Grid2D):
         width = len(rows[0])
         pipes = [Pipe(i) for i in ''.join(rows)]
         super(PipeNetwork, self).__init__(width, data=pipes)
-        
+
         # find the S, and figure out what it's connections should be
         startPoints = self.findCoords('S')
         assert len(startPoints) == 1
 
         sCoord = startPoints[0]
-
-        opposites = self.orthoNeighbors[::-1]
-
         sConnectors = []
-
+        # loop over all the ortho directions and determine if any of those
+        # neighbors connect to the starting pipe
         for i, direction in enumerate(self.orthoNeighbors):
-            localNeighbor = utils.math.Int2(sCoord + direction)
-            if self.coordsInBounds(localNeighbor):
-                print(localNeighbor, '->', self[localNeighbor].connectors)
-                if opposites[i] in self[localNeighbor].connectors:
-                    sConnectors.append(opposites[i])
-
-        print(sConnectors)
+            neighbor = utils.math.Int2(sCoord + direction)
+            if self.coordsInBounds(neighbor):
+                opposite = direction * -1
+                if opposite in self[neighbor].connectors:
+                    sConnectors.append(direction)
+                    
+        assert len(sConnectors) > 0 
         self[sCoord].connectors = sConnectors
 
+        # then, once we've got all the pipes connected
         # update each pipe with all of its neighbors
-        for i, pipe in self.enumerateCoords():
-            for connector in self[i].connectors:
-                localNeighbor = utils.math.Int2(connector + i)
-                if self.coordsInBounds(localNeighbor):
-                    self[i].connections.append(localNeighbor)
+        # so we don't have to keep adding coordinates to themselves
+        for coord, pipe in self.enumerateCoords():
+            for connector in self[coord].connectors:
+                neighbor = utils.math.Int2(connector + coord)
+                if self.coordsInBounds(neighbor):
+                    self[coord].connections.append(neighbor)
+
+        assert len(self[sCoord].connections) > 0
 
         # once we've done that, zoop through the connections from the start point and update their 
         # distance from the start point
-        self.traversePaths(sCoord, 0)
+        self[sCoord].distanceFromStart = 0
+
+        # then traverse from one direction back around
+        self.traversePath(sCoord, self[sCoord].connections[0], 1)
+        self.traversePath(sCoord, self[sCoord].connections[1], 1)
     
-    def traversePaths(self, coord, distanceSoFar):
+    def traversePath(self, prev, next, distanceSoFar):
         """
         For each of the connections in this pipe, traverse all the unvisited connections
         from this point
+
+        :param utils.math.Int2 prev: the place we just were
+        :param utils.math.Int2 next: the place where we're going
         """
-        self[coord].distanceFromStart = distanceSoFar
-        for connection in self[coord].connections:
-            if self[connection].distanceFromStart < 0:
-                self.traversePaths(connection, distanceSoFar + 1)
+        # TODO while loop this, because recursion depth has issues
+        while self[next] != 'S':
+            # if this point hasn't been visited yet
+            if self[next].distanceFromStart < 0:
+                self[next].distanceFromStart = distanceSoFar
+            # otherwise, pick the minimum of the two distances
+            else:
+                self[next].distanceFromStart = min(self[next].distanceFromStart, distanceSoFar)
+
+            nextIndex = abs(1 - self[next].connections.index(prev))
+            print(nextIndex)
+
+            prev = next
+            print(self[prev].connections)
+            next = self[prev].connections[nextIndex]
+
+            distanceSoFar + 1
+        
+    def distancesAsString(self):
+        """
+        Return a printable string for the distances of all the points in the grid
+        """
+        distanceGrid = utils.math.Grid2D(self.width, data=[i.distanceFromStart for i in self])
+        return str(distanceGrid)
 
 
 class Solver(solver.solver.ProblemSolver):
@@ -234,9 +264,7 @@ class Solver(solver.solver.ProblemSolver):
 
         :return int: the furthest distance away from the start that any pipe could be
         """
-        result = 0
-
-        return result
+        return max([i.distanceFromStart for i in self.processed])
 
 
 if __name__ == '__main__':

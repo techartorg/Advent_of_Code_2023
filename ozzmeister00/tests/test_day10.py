@@ -20,7 +20,7 @@ class TestPipeNetwork(TestCase):
     def test_SConnectors(self):
         network = solutions.day10.PipeNetwork(self.testData)
 
-        expectedConnections = [utils.math.Grid2D.East, utils.math.Grid2D.South]
+        expectedConnections = [utils.math.Grid2D.East, utils.math.Grid2D.North]
         startCoords = network.findCoords('S')
 
         self.assertEquals(1, len(startCoords))
@@ -36,19 +36,9 @@ class TestPipeNetwork(TestCase):
 
 class TestDay10(TestCase):
     def test_part01(self):
-        self.skipTest("not ready")
-        expected = 142
-        testData = '''-L|F7\n7S-7|\nL|7||\n-L-J|\nL|-JF'''
-        solver = solutions.day10.Solver(rawData=testData)
+        testData = [('''..F7.\n.FJ|.\nSJ.L7\n|F--J\nLJ...''', 8),
+                    ('''.....\n.S-7.\n.|.|.\n.L-J.\n.....''', 4)]
 
-        self.assertEqual(expected, solver.SolvePartOne())
-
-    def test_part02(self):
-        try:
-            expected = None
-            testData = ''
-            solver = solutions.day10.Solver(rawData=testData)
-
-            self.assertEqual(expected, solver.SolvePartTwo())
-        except NotImplementedError:
-            self.skipTest("Part Two Not Yet Implemented")
+        for test, expected in testData:
+            solver = solutions.day10.Solver(rawData=test)
+            self.assertEqual(expected, solver.SolvePartOne())
