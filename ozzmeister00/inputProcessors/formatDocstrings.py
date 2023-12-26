@@ -30,7 +30,7 @@ def formatDocstring(filePath):
                         fh.write(line)
                         fh.write('\n')
                 else:
-                    fh.write(line)
+                    fh.write(graf)
                     fh.write('\n')
             else:
                 fh.write('\n')

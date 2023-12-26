@@ -290,6 +290,58 @@ def getBarycentric(p, a, b, c):
     return u, v, w
 
 
+class BoundingBox2D(object):
+    def __init__(self, minPoint, maxPoint):
+        super(BoundingBox2D, self).__init__()
+
+        self.min = self.bottomLeft = minPoint
+        self.max = self.topRight = maxPoint
+        self.width = self.max.x - self.min.x
+        self.height = self.max.y - self.min.y
+        self.bottomRight = Int2((self.max.x, self.min.y))
+        self.topLeft = Int2((self.min.x, self.max.y))
+
+    @staticmethod
+    def fromPoints(inPoints):
+        """
+        Given an input list of points, create a bounding box that encompasses 
+        all of those points
+        """
+        xPoints = [point.x for point in inPoints]
+        xMin = min(xPoints)
+        xMax = max(xPoints)
+
+        yPoints = [point.y for point in inPoints]
+        yMin = min(yPoints)
+        yMax = max(yPoints)
+
+        minValue = Int2((xMin, yMin))
+        maxValue = Int2((xMax, yMax))
+        return BoundingBox2D(minValue, maxValue)
+
+    def pointInside(self, point):
+        """
+        :param Int2 point: the point to test
+        :return bool: if the input point is inside this bounding box
+        """
+        return self.min.x <= point.x < self.max.x and self.min.y <= point.y < self.max.y
+
+    def overlaps(self, other):
+        """
+        :param BoundingBox2D other: the other bounding box to check
+        :return bool: if the input bounding box overlaps with this one at all
+        """
+        raise NotImplementedError("I'll get to this eventually ~ 2023/12/25")
+
+    def __eq__(self, other):
+        """
+        :param BoundingBox2D other:
+        :return bool:
+        """
+        return self.min == other.min and \
+               self.max == other.max
+
+
 class Grid2D(list):
     North = Up = Int2((0, 1))
     South = Down = Int2((0, -1))
@@ -505,6 +557,19 @@ class Grid2D(list):
         """
         raise NotImplementedError("Figure out a way to reuse EnumerateColumns")
 
+    def enumerateBoundingBox(self, bbox):
+        """
+        Return all the objects within an input bounding box
+
+        :param BoundingBox2D bbox:
+
+        :yields Int2, object: the current coordinate and object at that coordinate
+        """
+        for y in range(bbox.min.y, bbox.max.y):
+            for x in range(bbox.min.x, bbox.max.x):
+                point = Int2((x, y))
+                yield point, self[point]
+
     def copy(self):
         """
         Override the built-in copy method so it returns a proper Grid2D
@@ -562,10 +627,20 @@ class Grid2D(list):
 
                     return [self[Int2((x, coords.start.y))] for x in range(start, stop + 1, step)]
                 else:
-                    raise ValueError(
-                        "Slicing only supports straight lines. Either Y or X must be the same in start and stop")
+                    raise ValueError("Slicing only supports straight lines. Either Y or X must be the same in start and stop")
             else:
                 raise ValueError("Grid2D slicing requires start and stop to be Int2")
+        elif isinstance(coords, BoundingBox2D):
+            output = []
+            for y in range(coords.min.y, coords.max.y):
+                for x in range(coords.min.x, coords.max.x):
+                    point = Int2((x, y))
+                    if self.coordsInBounds(point):
+                        output.append(self[point])
+                    else:
+                        raise ValueError(f"BoundingBox {coords} extends beyond the bounds of this grid")
+
+            return output
 
         return super(Grid2D, self).__getitem__(self._coordsToIndex(coords))
 

@@ -151,7 +151,7 @@ Consider all of the initial seed numbers listed in the ranges on the first line 
 """
 
 import utils.list
-from utils.solver import ProblemSolver
+from solver.solver import ProblemSolver
 
 
 class Seed(object):
@@ -522,20 +522,19 @@ class Almanac(object):
 
 
 class Solver(ProblemSolver):
-    def __init__(self):
-        super(Solver, self).__init__(5)
+    def __init__(self, rawData=None):
+        super(Solver, self).__init__(5, rawData=rawData)
 
-        self.testDataAnswersPartOne = [35]
-        self.testDataAnswersPartTwo = [46]
+        #self.testDataAnswersPartOne = [35]
+        #self.testDataAnswersPartTwo = [46]
 
-    def ProcessInput(self, data=None):
+    def ProcessInput(self):
         """
         :param str data: the raw input data
 
         :returns list[int], Almanac: return the seeds to plant, and the generated almanac
         """
-        if not data:
-            data = self.rawData
+        data = self.rawData
 
         lines = data.splitlines()
 
@@ -544,15 +543,14 @@ class Solver(ProblemSolver):
 
         return seeds, almanac
 
-    def SolvePartOne(self, data=None):
+    def SolvePartOne(self):
         """
         
         :param list[int], Almanac data: the seeds we're meant to locate and the Almanac to help us locate them
 
         :return int: the lowest location value for our input seeds
         """
-        if not data:
-            data = self.processed
+        data = self.processed
 
         # unpack the data
         seeds, almanac = data
@@ -561,7 +559,7 @@ class Solver(ProblemSolver):
 
         return min(locations)
 
-    def SolvePartTwo(self, data=None):
+    def SolvePartTwo(self):
         """
         Instead of looking at the seed values in the almanac as explicit values, treat them as a range
         and return the lowest location from there
@@ -569,8 +567,7 @@ class Solver(ProblemSolver):
         :param list[int], Almanac data: the seeds we're meant to locate and the Almanac to help us locate them
         :return int: the lowest location
         """
-        if not data:
-            data = self.processed
+        data = self.processed
 
         # unpack the data
         seeds, almanac = data

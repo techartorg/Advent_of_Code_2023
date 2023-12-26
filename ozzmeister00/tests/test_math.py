@@ -149,6 +149,34 @@ class TestTwoD(TestCase):
         self.assertEqual(b.direction(a), c)
 
 
+class TestBoundingBox2D(TestCase):
+    def setUp(self):
+        minValue = utils.math.Int2((1, 1))
+        maxValue = utils.math.Int2((4, 4))
+        self.bbox = utils.math.BoundingBox2D(minValue, maxValue)        
+
+    def test_class(self):
+        self.assertEqual(3, self.bbox.width)
+        self.assertEqual(3, self.bbox.height)
+        self.assertEqual(utils.math.Int2((1, 4)), self.bbox.topLeft)
+        self.assertEqual(utils.math.Int2((4, 1)), self.bbox.bottomRight)
+
+    def test_contains(self):
+        inside = utils.math.Int2((2, 2))
+        outside = utils.math.Int2((0, 0))
+
+        self.assertTrue(self.bbox.pointInside(inside))
+        self.assertFalse(self.bbox.pointInside(outside))
+
+    def test_fromPoints(self):
+        points = [utils.math.Int2((1, 1)),
+                  utils.math.Int2((4, 4)),
+                  utils.math.Int2((2, 1)),
+                  utils.math.Int2((1, 2))]
+
+        self.assertEqual(self.bbox, utils.math.BoundingBox2D.fromPoints(points))
+    
+
 class TestGrid2D(TestCase):
     def setUp(self):
         self.inGrid = 'ABCD'
@@ -229,3 +257,15 @@ class TestGrid2D(TestCase):
         outSlice = testObj[self.testCoords[0][0]:self.testCoords[1][0]]
         expected = ['A', 'B']
         self.assertEqual(outSlice, expected)
+
+    def test_bboxGet(self):
+        testGrid = list(range(10))
+        testObj = utils.math.Grid2D(3, data=testGrid)
+        
+        minValue = utils.math.Int2((0, 0))
+        maxValue = utils.math.Int2((2, 2))
+        bbox = utils.math.BoundingBox2D(minValue, maxValue)
+
+        expected = [0, 1, 3, 4]
+
+        self.assertEqual(expected, testObj[bbox])

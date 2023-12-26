@@ -122,6 +122,109 @@ Here are the distances for each tile on that loop:
 Find the single giant loop starting at S. How many steps along the loop does it 
 take to get from the starting position to the point farthest from the starting 
 position?
+
+--- Part Two ---
+
+You quickly reach the farthest point of the loop, but the animal never emerges. 
+Maybe its nest is within the area enclosed by the loop?
+
+To determine whether it's even worth taking the time to search for such a nest, 
+you should calculate how many tiles are contained within the loop. For example:
+
+...........
+.S-------7.
+.|F-----7|.
+.||.....||.
+.||.....||.
+.|L-7.F-J|.
+.|..|.|..|.
+.L--J.L--J.
+...........
+The above loop encloses merely four tiles - the two pairs of . in the southwest 
+and southeast (marked I below). The middle . tiles (marked O below) are not in 
+the loop. Here is the same loop again with those regions marked:
+
+...........
+.S-------7.
+.|F-----7|.
+.||OOOOO||.
+.||OOOOO||.
+.|L-7OF-J|.
+.|II|O|II|.
+.L--JOL--J.
+.....O.....
+In fact, there doesn't even need to be a full tile path to the outside for tiles
+ to count as outside the loop - squeezing between pipes is also allowed! Here, I
+ is still within the loop and O is still outside the loop:
+
+..........
+.S------7.
+.|F----7|.
+.||OOOO||.
+.||OOOO||.
+.|L-7F-J|.
+.|II||II|.
+.L--JL--J.
+..........
+In both of the above examples, 4 tiles are enclosed by the loop.
+
+Here's a larger example:
+
+.F----7F7F7F7F-7....
+.|F--7||||||||FJ....
+.||.FJ||||||||L7....
+FJL7L7LJLJ||LJ.L-7..
+L--J.L7...LJS7F-7L7.
+....F-J..F7FJ|L7L7L7
+....L7.F7||L7|.L7L7|
+.....|FJLJ|FJ|F7|.LJ
+....FJL-7.||.||||...
+....L---J.LJ.LJLJ...
+The above sketch has many random bits of ground, some of which are in the loop 
+(I) and some of which are outside it (O):
+
+OF----7F7F7F7F-7OOOO
+O|F--7||||||||FJOOOO
+O||OFJ||||||||L7OOOO
+FJL7L7LJLJ||LJIL-7OO
+L--JOL7IIILJS7F-7L7O
+OOOOF-JIIF7FJ|L7L7L7
+OOOOL7IF7||L7|IL7L7|
+OOOOO|FJLJ|FJ|F7|OLJ
+OOOOFJL-7O||O||||OOO
+OOOOL---JOLJOLJLJOOO
+In this larger example, 8 tiles are enclosed by the loop.
+
+Any tile that isn't part of the main loop can count as being enclosed by the 
+loop. Here's another example with many bits of junk pipe lying around that 
+aren't connected to the main loop at all:
+
+FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L
+Here are just the tiles that are enclosed by the loop marked with I:
+
+FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJIF7FJ-
+L---JF-JLJIIIIFJLJJ7
+|F|F-JF---7IIIL7L|7|
+|FFJF7L7F-JF7IIL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L
+In this last example, 10 tiles are enclosed by the loop.
+
+Figure out whether you have time to search for the nest by calculating the area 
+within the loop. How many tiles are enclosed by the loop?
 """
 
 import solver.runner
@@ -154,14 +257,21 @@ class Pipe(str):
         self.updateConnectors(character)
         self.connections = []  # indexes of the points in the grid to which this pipe connects
         self.distanceFromStart = -1 # init this since we'll need it later and we dont' want to make a whole separate Grid2D for it
+        self.isInsideLoop = False
+        self.hasBeenVisited = False
 
     def updateConnectors(self, character):
         """
         Update the connectors of the pipe to match the input character
 
-        :param str character: the pipe charcter whose connections we want to match
+        :param str character: the pipe charcter whose connections we want to 
+match
         """
         self.connectors = Pipe.CONNECITON_MAPPING[character]
+
+    @property
+    def isMainLoop(self):
+        return self.distanceFromStart > -1
 
 
 class PipeNetwork(utils.math.Grid2D):
@@ -189,7 +299,7 @@ class PipeNetwork(utils.math.Grid2D):
                 opposite = direction * -1
                 if opposite in self[neighbor].connectors:
                     sConnectors.append(direction)
-                    
+
         assert len(sConnectors) > 0 
         self[sCoord].connectors = sConnectors
 
@@ -211,7 +321,7 @@ class PipeNetwork(utils.math.Grid2D):
         # then traverse from one direction back around
         self.traversePath(sCoord, self[sCoord].connections[0], 1)
         self.traversePath(sCoord, self[sCoord].connections[1], 1)
-    
+
     def traversePath(self, prev, next, distanceSoFar):
         """
         For each of the connections in this pipe, traverse all the unvisited connections
@@ -220,7 +330,9 @@ class PipeNetwork(utils.math.Grid2D):
         :param utils.math.Int2 prev: the place we just were
         :param utils.math.Int2 next: the place where we're going
         """
-        # TODO while loop this, because recursion depth has issues
+        # while loop this, because recursion depth has issues if we call this function
+        # for each non-visited connection (although this will probably bite me in the butt
+        # whenever Eric has a challenge involving intersections)
         while self[next] != 'S':
             # if this point hasn't been visited yet
             if self[next].distanceFromStart < 0:
@@ -235,13 +347,31 @@ class PipeNetwork(utils.math.Grid2D):
             next = self[prev].connections[nextIndex]
 
             distanceSoFar += 1
-        
+
     def distancesAsString(self):
         """
         Return a printable string for the distances of all the points in the grid
         """
         distanceGrid = utils.math.Grid2D(self.width, data=[i.distanceFromStart for i in self])
         return str(distanceGrid)
+
+    @property
+    def mainLoopPipes(self):
+        """
+        Gather up all the pipes that are part of the main loop and return them
+
+        :return list[utils.math.Int2]: coords of all the main loop pipes
+        """
+        return [coord for coord, pipe in self.enumerateCoords() if pipe.isMainLoop]
+
+    @property
+    def disconnectedPipes(self):
+        """
+        Gather up all the pipes that aren't part of the main loop and return them
+
+        :return list[utils.math.Int2]: coords of all the pipes not on the main loop
+        """
+        return [coord for coord, pipe in self.enumerateCoords() if not pipe.isMainLoop]
 
 
 class Solver(solver.solver.ProblemSolver):
@@ -263,6 +393,62 @@ class Solver(solver.solver.ProblemSolver):
         :return int: the furthest distance away from the start that any pipe could be
         """
         return max([i.distanceFromStart for i in self.processed])
+
+    def SolvePartTwo(self):
+        """
+        Given the processed pipe network, determine the number of pipes that
+        are fully contained by the pipe network
+
+        :return int: the number of contained tiles
+        """
+        def floodFill(coordinate, group):
+            group.append(coordinate)
+
+            for coord, pipe in self.processed.enumerateNeighborsBox(coordinate, distance=1):
+                # bail out on the main loop
+                if coord not in group and not pipe.isMainLoop:
+                    group = floodFill(coord, group) 
+
+            return group
+
+        # bound our search within the the footprint of the pipe network
+        # there's no need to parse tiles outside that
+        networkBounds = utils.math.BoundingBox2D.fromPoints(self.processed.mainLoopPipes)
+
+        # find the candidate coordinates within the bounding box, and only
+        # consider the pipes that aren't prt of the main loop
+        candidates = [coord for coord, pipe in self.processed.enumerateBoundingBox(networkBounds) if not pipe.isMainLoop]
+
+        # break up the candidates into group by floodfilling out from 
+        # the first available candidate, winnowing down the candidates 
+        # until there aren't any more candidates
+        groups = []
+
+        while candidates:
+            # floodfill a group from the first coordinate in our list of candidates
+            group = []
+            group = floodFill(candidates[0], group)
+
+            candidates = [coord for coord in candidates if coord not in group]
+
+            groups.append(group)
+
+        # then, check the groups to find the groups that are connected to the edge
+        interiorPoints = []
+
+        for group in groups:
+            i = 0
+            while i < len(group) and not self.processed.coordOnEdge(group[i]):
+                i += 1
+
+            # if we got to the end of that and we didn't bail out early
+            # then we know that that group is the interior group
+            if i == len(group):
+                interiorPoints += group
+
+        assert len(interiorPoints) > 0
+
+        return len(interiorPoints)
 
 
 if __name__ == '__main__':
