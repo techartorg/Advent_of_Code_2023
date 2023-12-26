@@ -27,7 +27,7 @@ class Node:
 
 
 def load_data(is_test=False):
-    with open('input.txt' if not is_test else 'test_input.txt') as fp:
+    with open('input.txt' if not is_test else 'test_input_2.txt') as fp:
         lines = fp.readlines()
 
     loaded_instructions = lines[0].strip()
@@ -51,18 +51,30 @@ def load_data(is_test=False):
     return loaded_instructions, result
 
 
+def find_starting_nodes(node_data):
+    result = list()
+    for node_name in node_data:
+        if not node_name.endswith('A'):
+            continue
+        result.append(node_data[node_name])
+    return result
+
+
 def traverse_nodes(instructions, nodes):
-    current_node = nodes['AAA']
+    current_nodes = find_starting_nodes(nodes)
+    print(len(current_nodes))
 
-    counter = 1
-    while current_node.Name != 'ZZZ':
-        for i in range(len(instructions)):
-            direction = instructions[i]
-            current_node = current_node.go(direction)
-            if current_node.Name == 'ZZZ':
-                break
+    num_instructions = list(range(len(instructions)))
+
+    # -- node list never changes size, just contents
+    num_nodes = list(range(len(current_nodes)))
+
+    counter = 0
+    while not all([node.Name.endswith('Z') for node in current_nodes]):
+        for i in num_instructions:
+            for j in num_nodes:
+                current_nodes[j] = current_nodes[j].go(instructions[i])
             counter += 1
-
     return counter
 
 
