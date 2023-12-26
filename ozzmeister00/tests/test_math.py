@@ -27,13 +27,13 @@ class TestTwoD(TestCase):
     def setUp(self):
         self.testValues = 'AB'
         self.otherValues = 'CD'
-        self.testObj = utils.math.TwoD(inV=self.testValues, defaultClass=str)
-        self.otherObj = utils.math.TwoD(inV=self.otherValues, defaultClass=str)
+        self.testObj = utils.math.TwoD(*self.testValues)
+        self.otherObj = utils.math.TwoD(*self.otherValues)
 
         self.floatValues = [1.5, 2.5]
         self.otherFloatValues = [.5, 1.5]
-        self.testFloatObj = utils.math.Float2(self.floatValues)
-        self.otherFloatObj = utils.math.Float2(self.otherFloatValues)
+        self.testFloatObj = utils.math.Float2(*self.floatValues)
+        self.otherFloatObj = utils.math.Float2(*self.otherFloatValues)
 
     def test_values(self):
         self.assertEqual(self.testObj.x, self.testValues[0],
@@ -49,9 +49,9 @@ class TestTwoD(TestCase):
                             msg="For some reason {} equals {}".format(self.testObj, self.otherObj))
 
     def test_hash(self):
-        a = utils.math.Int2((0, 0))
-        b = utils.math.Int2((0, 0))
-        c = utils.math.Int2((0, 1))
+        a = utils.math.Int2(0, 0)
+        b = utils.math.Int2(0, 0)
+        c = utils.math.Int2(0, 1)
         twoDList = [a, b, c]
         try:
             setList = list(set(twoDList))
@@ -65,85 +65,85 @@ class TestTwoD(TestCase):
         self.assertEqual(singleAdd.y, 'BA',
                          msg="For some reason {} does not equal BA".format(singleAdd.y))
 
-        sameEquivalent = utils.math.TwoD(['AC', 'BD'], str)
+        sameEquivalent = utils.math.TwoD('AC', 'BD')
         sameClassAdd = self.testObj + self.otherObj
         self.assertEqual(sameEquivalent, sameClassAdd,
                          msg="For some reason {} does not equal AC,BD".format(sameClassAdd))
 
         sameClass = self.testFloatObj + self.otherFloatObj
-        expected = utils.math.Float2([self.floatValues[0] + self.otherFloatValues[0],
-                                      self.floatValues[1] + self.otherFloatValues[1]])
+        expected = utils.math.Float2(self.floatValues[0] + self.otherFloatValues[0],
+                                     self.floatValues[1] + self.otherFloatValues[1])
         self.assertEqual(sameClass, expected,
                          msg="For some reason {} does not equal {}".format(sameClass, expected))
 
         oneD = self.otherFloatObj + .5
-        oneDExpected = utils.math.Float2((1.0, 2.0))
+        oneDExpected = utils.math.Float2(1.0, 2.0)
         self.assertEqual(oneD, oneDExpected,
                          msg="For some reason {} does not equal {}".format(oneD, oneDExpected))
 
     def test_mul(self):
         sameClass = self.testFloatObj * self.otherFloatObj
-        expected = utils.math.Float2([self.floatValues[0] * self.otherFloatValues[0],
-                                      self.floatValues[1] * self.otherFloatValues[1]])
+        expected = utils.math.Float2(self.floatValues[0] * self.otherFloatValues[0],
+                                      self.floatValues[1] * self.otherFloatValues[1])
         self.assertEqual(sameClass, expected,
                          msg="For some reason {} does not equal {}".format(sameClass, expected))
 
         oneD = self.otherFloatObj * 2.0
-        oneDExpected = utils.math.Float2((1.0, 3.0))
+        oneDExpected = utils.math.Float2(1.0, 3.0)
         self.assertEqual(oneD, oneDExpected,
                          msg="For some reason {} does not equal {}".format(oneD, oneDExpected))
 
     def test_div(self):
         sameClassDivided = self.testFloatObj / self.otherFloatObj
-        expected = utils.math.Float2([self.floatValues[0] / self.otherFloatValues[0],
-                                           self.floatValues[1] / self.otherFloatValues[1]])
+        expected = utils.math.Float2(self.floatValues[0] / self.otherFloatValues[0],
+                                      self.floatValues[1] / self.otherFloatValues[1])
         self.assertEqual(sameClassDivided, expected,
                          msg="For some reason {} does not equal {}".format(sameClassDivided, expected))
 
         oneD = self.otherFloatObj / 2.0
-        oneDExpected = utils.math.Float2((.25, .75))
+        oneDExpected = utils.math.Float2(.25, .75)
         self.assertEqual(oneD, oneDExpected,
                          msg="For some reason {} does not equal {}".format(oneD, oneDExpected))
 
     def test_sub(self):
         sameClass = self.testFloatObj - self.otherFloatObj
-        expected = utils.math.Float2([self.floatValues[0] - self.otherFloatValues[0],
-                                           self.floatValues[1] - self.otherFloatValues[1]])
+        expected = utils.math.Float2(self.floatValues[0] - self.otherFloatValues[0],
+                                      self.floatValues[1] - self.otherFloatValues[1])
         self.assertEqual(sameClass, expected,
                          msg="For some reason {} does not equal {}".format(sameClass, expected))
 
         oneD = self.otherFloatObj - .5
-        oneDExpected = utils.math.Float2((0.0, 1.0))
+        oneDExpected = utils.math.Float2(0.0, 1.0)
         self.assertEqual(oneD, oneDExpected,
                          msg="For some reason {} does not equal {}".format(oneD, oneDExpected))
 
     def test_length(self):
-        a = utils.math.Float2((0.0, 1.0))
+        a = utils.math.Float2(0.0, 1.0)
         self.assertEqual(a.length(), 1.0)
 
     def test_distance(self):
-        a = utils.math.Float2((1.0, 1.0))
-        b = utils.math.Float2((1.0, 2.0))
+        a = utils.math.Float2(1.0, 1.0)
+        b = utils.math.Float2(1.0, 2.0)
         self.assertEqual(a.distance(b), 1.0)
 
     def test_normalize(self):
-        a = utils.math.Float2((1.0, 2.0)).normalize()
+        a = utils.math.Float2(1.0, 2.0).normalize()
         expected = [0.4472135954999579, 0.8944271909999159]
         self.assertEqual(a[0], expected[0])
         self.assertEqual(a[1], expected[1])
 
     def test_direction(self):
-        a = utils.math.Float2((1.0, 0.0))
-        b = utils.math.Float2((0.0, 0.0))
-        aToB = utils.math.Float2((-1.0, 0.0))
-        bToA = utils.math.Float2((1.0, 0.0))
+        a = utils.math.Float2(1.0, 0.0)
+        b = utils.math.Float2(0.0, 0.0)
+        aToB = utils.math.Float2(-1.0, 0.0)
+        bToA = utils.math.Float2(1.0, 0.0)
 
         self.assertEqual(a.direction(b), aToB)
         self.assertEqual(b.direction(a), bToA)
 
-        a = utils.math.Int2((0, 0))
-        b = utils.math.Int2((1, 1))
-        c = utils.math.Int2((-1, -1))
+        a = utils.math.Int2(0, 0)
+        b = utils.math.Int2(1, 1)
+        c = utils.math.Int2(-1, -1)
 
         self.assertEqual(a.direction(b), b)
         self.assertEqual(b.direction(a), c)
@@ -151,39 +151,39 @@ class TestTwoD(TestCase):
 
 class TestBoundingBox2D(TestCase):
     def setUp(self):
-        minValue = utils.math.Int2((1, 1))
-        maxValue = utils.math.Int2((4, 4))
-        self.bbox = utils.math.BoundingBox2D(minValue, maxValue)        
+        minValue = utils.math.Int2(1, 1)
+        maxValue = utils.math.Int2(4, 4)
+        self.bbox = utils.math.BoundingBox2D(minValue, maxValue)
 
     def test_class(self):
         self.assertEqual(3, self.bbox.width)
         self.assertEqual(3, self.bbox.height)
-        self.assertEqual(utils.math.Int2((1, 4)), self.bbox.topLeft)
-        self.assertEqual(utils.math.Int2((4, 1)), self.bbox.bottomRight)
+        self.assertEqual(utils.math.Int2(1, 4), self.bbox.topLeft)
+        self.assertEqual(utils.math.Int2(4, 1), self.bbox.bottomRight)
 
     def test_contains(self):
-        inside = utils.math.Int2((2, 2))
-        outside = utils.math.Int2((0, 0))
+        inside = utils.math.Int2(2, 2)
+        outside = utils.math.Int2(0, 0)
 
         self.assertTrue(self.bbox.pointInside(inside))
         self.assertFalse(self.bbox.pointInside(outside))
 
     def test_fromPoints(self):
-        points = [utils.math.Int2((1, 1)),
-                  utils.math.Int2((4, 4)),
-                  utils.math.Int2((2, 1)),
-                  utils.math.Int2((1, 2))]
+        points = [utils.math.Int2(1, 1),
+                  utils.math.Int2(4, 4),
+                  utils.math.Int2(2, 1),
+                  utils.math.Int2(1, 2)]
 
         self.assertEqual(self.bbox, utils.math.BoundingBox2D.fromPoints(points))
-    
+
 
 class TestGrid2D(TestCase):
     def setUp(self):
         self.inGrid = 'ABCD'
-        self.testCoords = [(utils.math.Int2((0, 0)), 'A'),
-                           (utils.math.Int2((1, 0)), 'B'),
-                           (utils.math.Int2((0, 1)), 'C'),
-                           (utils.math.Int2((1, 1)), 'D')]
+        self.testCoords = [(utils.math.Int2(0, 0), 'A'),
+                           (utils.math.Int2(1, 0), 'B'),
+                           (utils.math.Int2(0, 1), 'C'),
+                           (utils.math.Int2(1, 1), 'D')]
 
     def test_get(self):
         testObj = utils.math.Grid2D(2, data=self.inGrid)
@@ -192,7 +192,7 @@ class TestGrid2D(TestCase):
 
     def test_set(self):
         testObj = utils.math.Grid2D(2, data=self.inGrid)
-        target = utils.math.Int2((1, 1))
+        target = utils.math.Int2(1, 1)
         testObj[target] = 'E'
         self.assertEqual(testObj[target], 'E')
 
@@ -248,7 +248,7 @@ class TestGrid2D(TestCase):
         self.assertEqual(indexes, expectedIndexes)
 
         coords = testObj.findCoords(1)
-        expectedCoords = [utils.math.Int2((0, 0)), utils.math.Int2((1, 1))]
+        expectedCoords = [utils.math.Int2(0, 0), utils.math.Int2(1, 1)]
 
         self.assertEqual(coords, expectedCoords)
 
@@ -261,9 +261,9 @@ class TestGrid2D(TestCase):
     def test_bboxGet(self):
         testGrid = list(range(10))
         testObj = utils.math.Grid2D(3, data=testGrid)
-        
-        minValue = utils.math.Int2((0, 0))
-        maxValue = utils.math.Int2((2, 2))
+
+        minValue = utils.math.Int2(0, 0)
+        maxValue = utils.math.Int2(2, 2)
         bbox = utils.math.BoundingBox2D(minValue, maxValue)
 
         expected = [0, 1, 3, 4]

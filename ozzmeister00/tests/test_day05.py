@@ -12,10 +12,10 @@ class TestDay05(TestCase):
         self.assertRaises(ValueError, solutions.day05.Range)
 
         # test equivalency
-        self.assertEquals(a, b)
+        self.assertEqual(a, b)
 
         # make sure we error out when we test equivalency with an unsupported type
-        self.assertRaises(TypeError, self.assertEquals, a, 'a')
+        self.assertRaises(TypeError, self.assertEqual, a, 'a')
 
         # test overlap
         overlapRange = solutions.day05.Range(7, 8)

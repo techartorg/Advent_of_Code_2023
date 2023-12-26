@@ -509,7 +509,6 @@ class Solver(solver.solver.ProblemSolver):
         hands.sort()
 
         for i, hand in enumerate(hands):
-            print(hand)
             result += (hand.bid * (i + 1))
 
         return result        

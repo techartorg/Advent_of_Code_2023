@@ -68,8 +68,9 @@ class TwoD(list):
     """
     A TwoD object to make it easier to access and multiply 2-length lists of numbers
     """
+    defaultClass = None
 
-    def __init__(self, inV=None, defaultClass=None):
+    def __init__(self, *args):
         """
         :param iterable inV: two-length iterable of class defaultClass
         :param defaultClass: which datatype class to use to instantiate the array
@@ -77,47 +78,49 @@ class TwoD(list):
         # set up a default input value to instatiate a float 2 to 0,0 automatically
         # because we can't put a [0,0] in the kwargs otherwise it'll be the same
         # for every instance and that's no bueno
-        if not inV:
-            inV = [defaultClass(), defaultClass()]
-        else:
-            inV = [defaultClass(v) for v in inV]  # convert our inputData to a list
+        if not args:
+            args = [self.defaultClass(), self.defaultClass()]
 
-        self.defaultClass = defaultClass
+        # convert our inputData to a list of the correct class, if one is defined, and the input values
+        # aren't already of the correct type
+        elif self.defaultClass:
+            if not isinstance(args[0], self.defaultClass):
+                args = [self.defaultClass(v) for v in args]
 
-        super(TwoD, self).__init__(inV)
+        super(TwoD, self).__init__(args)
 
     def __add__(self, other):
         if isinstance(other, TwoD):
-            return self.__class__([self.x + other.x, self.y + other.y], defaultClass=self.defaultClass)
+            return self.__class__(self.x + other.x, self.y + other.y)
         else:
-            return self.__class__([self.x + other, self.y + other], defaultClass=self.defaultClass)
+            return self.__class__(self.x + other, self.y + other)
 
     def __iadd__(self, other):
         return self.__add__(other)
 
     def __sub__(self, other):
         if isinstance(other, TwoD):
-            return self.__class__([self.x - other.x, self.y - other.y], defaultClass=self.defaultClass)
+            return self.__class__(self.x - other.x, self.y - other.y)
         else:
-            return self.__class__([self.x - other, self.y - other], defaultClass=self.defaultClass)
+            return self.__class__(self.x - other, self.y - other)
 
     def __isub__(self, other):
         return self.__sub__(other)
 
     def __mul__(self, other):
         if isinstance(other, self.__class__):
-            return self.__class__([self.x * other.x, self.y * other.y], defaultClass=self.defaultClass)
+            return self.__class__(self.x * other.x, self.y * other.y)
         if isinstance(other, int) or isinstance(other, float):
-            return self.__class__([self.x * other, self.y * other], defaultClass=self.defaultClass)
+            return self.__class__(self.x * other, self.y * other)
 
     def __imul__(self, other):
         return self.__mul__(other)
 
     def _div(self, other):
         if isinstance(other, self.__class__):
-            return self.__class__([self.x / other.x, self.y / other.y], defaultClass=self.defaultClass)
+            return self.__class__(self.x / other.x, self.y / other.y)
         if isinstance(other, int) or isinstance(other, float):
-            return self.__class__([self.x / other, self.y / other], defaultClass=self.defaultClass)
+            return self.__class__(self.x / other, self.y / other)
 
     def __truediv__(self, other):
         return self._div(other)
@@ -205,25 +208,27 @@ class Number2(TwoD):
         """
         :return float: the distance from 0,0 to this point
         """
-        return self.__class__((0, 0)).distance(self)
+        return self.__class__().distance(self)
 
 
 class Float2(Number2):
     """
     Float-specific alias for TwoD
     """
+    defaultClass = float
 
-    def __init__(self, inV=None, defaultClass=None):
-        super(Float2, self).__init__(inV, defaultClass=float)
+    def __init__(self, *args):
+        super(Float2, self).__init__(*args)
 
 
 class Int2(Number2):
     """
     Alias for TwoD
     """
+    defaultClass = int
 
-    def __init__(self, inV=None, defaultClass=None):
-        super(Int2, self).__init__(inV, defaultClass=int)
+    def __init__(self, *args):
+        super(Int2, self).__init__(*args)
 
     def __truediv__(self, other):
         # if an int2 is divided by a float, return the ceil of that division
@@ -234,7 +239,7 @@ class Int2(Number2):
             x = math.ceil(x) if x > 0 else math.floor(x)
             y = math.ceil(y) if y > 0 else math.floor(y)
 
-            return Int2((x, y))
+            return Int2(x, y)
 
         return super(Int2, self).__truediv__(other)
 
@@ -298,8 +303,8 @@ class BoundingBox2D(object):
         self.max = self.topRight = maxPoint
         self.width = self.max.x - self.min.x
         self.height = self.max.y - self.min.y
-        self.bottomRight = Int2((self.max.x, self.min.y))
-        self.topLeft = Int2((self.min.x, self.max.y))
+        self.bottomRight = Int2(self.max.x, self.min.y)
+        self.topLeft = Int2(self.min.x, self.max.y)
 
     @staticmethod
     def fromPoints(inPoints):
@@ -315,8 +320,8 @@ class BoundingBox2D(object):
         yMin = min(yPoints)
         yMax = max(yPoints)
 
-        minValue = Int2((xMin, yMin))
-        maxValue = Int2((xMax, yMax))
+        minValue = Int2(xMin, yMin)
+        maxValue = Int2(xMax, yMax)
         return BoundingBox2D(minValue, maxValue)
 
     def pointInside(self, point):
@@ -343,14 +348,14 @@ class BoundingBox2D(object):
 
 
 class Grid2D(list):
-    North = Up = Int2((0, 1))
-    South = Down = Int2((0, -1))
-    NorthWest = UpLeft = Int2((-1, 1))
-    West = Left = Int2((-1, 0))
-    SouthWest = DownLeft = Int2((-1, -1))
-    NorthEast = UpRight = Int2((1, 1))
-    East = Right = Int2((1, 0))
-    SouthEast = DownRight = Int2((1, -1))
+    North = Up = Int2(0, 1)
+    South = Down = Int2(0, -1)
+    NorthWest = UpLeft = Int2(-1, 1)
+    West = Left = Int2(-1, 0)
+    SouthWest = DownLeft = Int2(-1, -1)
+    NorthEast = UpRight = Int2(1, 1)
+    East = Right = Int2(1, 0)
+    SouthEast = DownRight = Int2(1, -1)
 
     # store these anti-clockwise, so we can potentially do useful stuff with that assumption later
     neighbors = [Right, UpRight, Up, UpLeft, Left, DownLeft, Down, DownRight]
@@ -423,12 +428,12 @@ class Grid2D(list):
 
     def indexToCoords(self, index):
         """
-        :param int coords: the 1d coordinate in the grid to seek
+        :param int index: the 1d coordinate in the grid to seek
 
         :return Int2: the x/y coordinate of the input index
         """
         if isinstance(index, int):
-            return Int2((index % self.width, index / self.width))
+            return Int2(index % self.width, index // self.width)
 
         return index
 
@@ -439,6 +444,7 @@ class Grid2D(list):
         :returns bool: if the input coords are in bounds
         """
         # TODO there will come a day when I need to update this so that Grid2D supports non-0 starting coordinates
+        # TODO 2023_12_26 maybe I can do that with some kind of stored offset?
         return 0 <= coords.x < self.width and 0 <= coords.y < self.height
 
     def coordOnEdge(self, coord):
@@ -466,7 +472,6 @@ class Grid2D(list):
         :yield (coords, object): the next neighbor in the NSEW group around the input coordinate
         """
         for neighbor in Grid2D.orthoNeighbors:
-            # TODO figure out why PyCharm thinks Int2 + Int2 returns a list
             localNeighbor = Int2(coords + neighbor)
             if self.coordsInBounds(localNeighbor):
                 yield localNeighbor, self[localNeighbor]
@@ -486,7 +491,7 @@ class Grid2D(list):
 
         for x in range(coords.x - distance, coords.x + distance + 1):
             for y in range(coords.y - distance, coords.y + distance + 1):
-                point = Int2((x, y))
+                point = Int2(x, y)
                 if self.coordsInBounds(point):
                     yield point, self[point]
 
@@ -500,7 +505,7 @@ class Grid2D(list):
         step = 1 if not reverse else -1
         coords = list(range(self.width))
         for x in coords[::step]:
-            coord = Int2((x, y))
+            coord = Int2(x, y)
             yield coord, self[coord]
 
     def enumerateRows(self, reverse=False):
@@ -513,7 +518,7 @@ class Grid2D(list):
         """
         step = 1 if not reverse else -1
         for y in list(range(self.height))[::step]:
-            yield y, self[Int2((0, y)):Int2((self.width-1, y))]
+            yield y, self[Int2(0, y):Int2(self.width-1, y)]
 
     def rows(self, reverse=False):
         """
@@ -534,7 +539,7 @@ class Grid2D(list):
         step = 1 if not reverse else -1
         coords = list(range(self.height))
         for y in coords[::step]:
-            coord = Int2((x, y))
+            coord = Int2(x, y)
             yield coord, self[coord]
 
     def enumerateColumns(self, reverse=False):
@@ -547,7 +552,7 @@ class Grid2D(list):
         """
         step = 1 if not reverse else -1
         for x in list(range(self.width))[::step]:
-            yield x, self[Int2((x, 0)):Int2((x, self.height-1))]
+            yield x, self[Int2(x, 0):Int2(x, self.height-1)]
 
     def columns(self, reverse=False):
         """
@@ -567,7 +572,7 @@ class Grid2D(list):
         """
         for y in range(bbox.min.y, bbox.max.y):
             for x in range(bbox.min.x, bbox.max.x):
-                point = Int2((x, y))
+                point = Int2(x, y)
                 yield point, self[point]
 
     def copy(self):
@@ -616,7 +621,7 @@ class Grid2D(list):
                         start = coords.start.y
                         stop = coords.stop.y
 
-                    return [self[Int2((coords.start.x, y))] for y in range(start, stop + 1, step)]
+                    return [self[Int2(coords.start.x, y)] for y in range(start, stop + 1, step)]
                 elif coords.start.y == coords.stop.y:
                     if coords.start.x > coords.stop.x:
                         start = coords.stop.x
@@ -625,7 +630,7 @@ class Grid2D(list):
                         start = coords.start.x
                         stop = coords.stop.x
 
-                    return [self[Int2((x, coords.start.y))] for x in range(start, stop + 1, step)]
+                    return [self[Int2(x, coords.start.y)] for x in range(start, stop + 1, step)]
                 else:
                     raise ValueError("Slicing only supports straight lines. Either Y or X must be the same in start and stop")
             else:
@@ -634,7 +639,7 @@ class Grid2D(list):
             output = []
             for y in range(coords.min.y, coords.max.y):
                 for x in range(coords.min.x, coords.max.x):
-                    point = Int2((x, y))
+                    point = Int2(x, y)
                     if self.coordsInBounds(point):
                         output.append(self[point])
                     else:
@@ -661,7 +666,7 @@ class Grid2D(list):
         outString = '\n'
         for y in range(self.height):
             for x in range(self.width):
-                outString += str(self[Int2((x, y))]) + " "
+                outString += str(self[Int2(x, y)]) + " "
             outString += '\n'
 
         return outString

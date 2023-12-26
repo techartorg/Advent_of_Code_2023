@@ -294,7 +294,7 @@ class PipeNetwork(utils.math.Grid2D):
         # loop over all the ortho directions and determine if any of those
         # neighbors connect to the starting pipe
         for i, direction in enumerate(self.orthoNeighbors):
-            neighbor = utils.math.Int2(sCoord + direction)
+            neighbor = sCoord + direction
             if self.coordsInBounds(neighbor):
                 opposite = direction * -1
                 if opposite in self[neighbor].connectors:
@@ -308,7 +308,7 @@ class PipeNetwork(utils.math.Grid2D):
         # so we don't have to keep adding coordinates to themselves
         for coord, pipe in self.enumerateCoords():
             for connector in self[coord].connectors:
-                neighbor = utils.math.Int2(connector + coord)
+                neighbor = connector + coord
                 if self.coordsInBounds(neighbor):
                     self[coord].connections.append(neighbor)
 
