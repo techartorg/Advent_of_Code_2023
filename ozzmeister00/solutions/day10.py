@@ -225,6 +225,8 @@ In this last example, 10 tiles are enclosed by the loop.
 
 Figure out whether you have time to search for the nest by calculating the area 
 within the loop. How many tiles are enclosed by the loop?
+
+638 is too high
 """
 
 import solver.runner
@@ -422,36 +424,52 @@ class Solver(solver.solver.ProblemSolver):
         # break up the candidates into group by floodfilling out from 
         # the first available candidate, winnowing down the candidates 
         # until there aren't any more candidates
-        groups = []
+        sections = []
 
+        # do a breadth-first search, since a depth-first search will result in a recursion depth limit
         while candidates:
-            # floodfill a group from the first coordinate in our list of candidates
-            group = []
-            group = floodFill(candidates[0], group)
+            # queue up the first candidate point
+            queue = [candidates.pop(0)]
+            section = []
 
-            candidates = [coord for coord in candidates if coord not in group]
+            # while we've still got coords in the queue, add its valid neighbors to the queue
+            while queue:
+                target = queue.pop(0)
+                section.append(target)
 
-            groups.append(group)
+                for coord, pipe in self.processed.enumerateOrthoLocalNeighbors(target):
+                    # valid neighbors are those that aren't in the main loop, and those that aren't already
+                    # in this section, nor those already queued up
+                    if not pipe.isMainLoop and coord not in queue and coord not in section:
+                        queue.append(coord)
 
-        # then, check the groups to find the groups that are connected to the edge
-        interiorPoints = []
+            sections.append(section)
+            candidates = [c for c in candidates if c not in section]
 
-        for group in groups:
+        # then, check the sections to find the sections that are connected to the edge
+        interiorCandidates = []
+
+        for section in sections:
             i = 0
-            while i < len(group) and not self.processed.coordOnEdge(group[i]):
+            while i < len(section) and not self.processed.coordOnEdge(section[i]):
                 i += 1
 
-            # if we got to the end of that and we didn't bail out early
-            # then we know that that group is the interior group
-            if i == len(group):
-                interiorPoints += group
+            # if we got to the end and didn't bail early because a point was on the edge,
+            # we can move onto the next check which is to see if a ray cast from one of the points
+            # in this section will overlap with the main loop an even or odd number of times
+            # if there are an odd number of overlaps, then we know we're inside the loop
+            # and if there are an even number of overlaps, we know we're outside the loop
+            if i == len(section):
+                pass
 
-        assert len(interiorPoints) > 0
+        assert len(interiorCandidates) > 0
+        interiorPoints = []
+
 
         return len(interiorPoints)
 
 
 if __name__ == '__main__':
     daySolver = Solver()
-    if solver.runner.RunTests(daySolver.day):
-        daySolver.Run()
+    #if solver.runner.RunTests(daySolver.day):
+    daySolver.Run()

@@ -90,7 +90,7 @@ class TwoD(list):
         super(TwoD, self).__init__(args)
 
     def __add__(self, other):
-        if isinstance(other, TwoD):
+        if isinstance(other, self.__class__):
             return self.__class__(self.x + other.x, self.y + other.y)
         else:
             return self.__class__(self.x + other, self.y + other)
@@ -99,7 +99,7 @@ class TwoD(list):
         return self.__add__(other)
 
     def __sub__(self, other):
-        if isinstance(other, TwoD):
+        if isinstance(other, self.__class__):
             return self.__class__(self.x - other.x, self.y - other.y)
         else:
             return self.__class__(self.x - other, self.y - other)
@@ -472,7 +472,7 @@ class Grid2D(list):
         :yield (coords, object): the next neighbor in the NSEW group around the input coordinate
         """
         for neighbor in Grid2D.orthoNeighbors:
-            localNeighbor = Int2(coords + neighbor)
+            localNeighbor = coords + neighbor
             if self.coordsInBounds(localNeighbor):
                 yield localNeighbor, self[localNeighbor]
 
