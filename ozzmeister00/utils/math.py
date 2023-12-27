@@ -1,6 +1,8 @@
 """
 Common maths functions and datatypes for solving Advent of Code problems
 """
+from __future__ import annotations
+
 
 import math
 import functools

@@ -156,7 +156,9 @@ class StarMap(utils.math.Grid2D):
         :param b: the index of the galaxy to end at
         :return: the orthogonal distance between the two galaxies
         """
-        return utils.math.Line2D(self.galaxies[a], self.galaxies[b]).length
+        length = utils.math.Line2D(self.galaxies[a], self.galaxies[b]).length
+        print(self.galaxies[a], self.galaxies[b], length)
+        return length
 
 
 class Solver(solver.solver.ProblemSolver):
