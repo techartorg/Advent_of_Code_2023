@@ -168,6 +168,16 @@ class TestBoundingBox2D(TestCase):
         self.assertTrue(self.bbox.pointInside(inside))
         self.assertFalse(self.bbox.pointInside(outside))
 
+    def test_overlap(self):
+        doesOverlap = utils.math.BoundingBox2D(utils.math.Int2(0, 0),
+                                               utils.math.Int2(2, 2))
+        doesNotOverlap = utils.math.BoundingBox2D(utils.math.Int2(5, 5), 
+                                                  utils.math.Int2(7, 7))
+        
+        self.assertTrue(self.bbox.overlaps(doesOverlap))
+        self.assertFalse(self.bbox.overlaps(doesNotOverlap))
+        self.assertRaises(ValueError, self.bbox.overlaps, 'Foo')
+
     def test_fromPoints(self):
         points = [utils.math.Int2(1, 1),
                   utils.math.Int2(4, 4),
@@ -177,6 +187,91 @@ class TestBoundingBox2D(TestCase):
         self.assertEqual(self.bbox, utils.math.BoundingBox2D.fromPoints(points))
 
 
+class TestLine2D(TestCase):
+    def test_length(self):
+        start = utils.math.Int2(1, 1)
+        end = utils.math.Int2(3, 3)
+        line = utils.math.Line2D(start, end)
+        self.assertEqual(4, line.length)
+
+    def test_direction(self):
+        start = utils.math.Int2(1, 1)
+        end = utils.math.Int2(3, 3)
+        line = utils.math.Line2D(start, end)
+        self.assertEqual(utils.math.Int2(1, 1), line.direction)
+
+    def test_intersection(self):
+        targetLine = utils.math.Line2D(utils.math.Int2(0, 0),
+                                          utils.math.Int2(1, 10))
+
+        intersecting = utils.math.Line2D(utils.math.Int2(0, 5),
+                                            utils.math.Int2(5, 5))
+
+        nonIntersecting = utils.math.Line2D(utils.math.Int2(5, 5),
+                                               utils.math.Int2(10, 5))
+
+        self.assertTrue(targetLine.intersects(intersecting))
+        self.assertFalse(targetLine.intersects(nonIntersecting))
+
+        polygonTestA = utils.math.Line2D(utils.math.Int2(2, 2),
+                                         utils.math.Int2(6, 2))
+        polygonTestB = utils.math.Line2D(utils.math.Int2(5, 5),
+                                         utils.math.Int2(5, 0))
+
+        self.assertTrue(polygonTestA.intersects(polygonTestB))
+
+
+class TestPolygon(TestCase):
+    TEST_POINTS = [utils.math.Int2(0, 0),
+                   utils.math.Int2(0, 5),
+                   utils.math.Int2(3, 3),
+                   utils.math.Int2(5, 5),
+                   utils.math.Int2(5, 0)]
+    
+    def setUp(self):
+        self.polygon = utils.math.Polygon2D(self.TEST_POINTS)
+
+    def test_polygon(self):
+        """
+        Make sure that when we make a polygon it ends up with the
+        correct number of edges
+        """
+        self.assertEqual(5, len(self.polygon.edges))
+
+    def test_pointInside(self):
+        """
+        Make sure the raycasting algorithm works
+        """
+        pointInside = utils.math.Int2(2, 2)
+        pointOutsideBBox = utils.math.Int2(6, 6)
+        pointOutsideInBBox = utils.math.Int2(3, 4)
+
+        self.assertTrue(self.polygon.pointInside(pointInside))
+        self.assertFalse(self.polygon.pointInside(pointOutsideBBox))
+        self.assertFalse(self.polygon.pointInside(pointOutsideInBBox))
+
+    def test_2023Day10State(self):
+        vertexes = [utils.math.Int2(1, 1), 
+                    utils.math.Int2(8, 1),
+                    utils.math.Int2(8, 7),
+                    utils.math.Int2(5, 7),
+                    utils.math.Int2(5, 5),
+                    utils.math.Int2(7, 5),
+                    utils.math.Int2(7, 2),
+                    utils.math.Int2(2, 2),
+                    utils.math.Int2(2, 5),
+                    utils.math.Int2(4, 5), 
+                    utils.math.Int2(4, 7),
+                    utils.math.Int2(1, 7)]
+
+        polygon = utils.math.Polygon2D(vertexes)
+
+        points = [utils.math.Float2(2.5, 6.5), utils.math.Int2(3.5, 6.5)]
+
+        for point in points:
+            self.assertTrue(polygon.pointInside(point))
+
+        
 class TestGrid2D(TestCase):
     def setUp(self):
         self.inGrid = 'ABCD'

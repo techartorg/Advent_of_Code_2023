@@ -245,6 +245,8 @@ class Pipe(str):
                           '.': (),
                           'S': ()}
 
+    CORNERS = 'LJF7'
+
     def __new__(cls, character):
         """
         :param str character: which character represents this pipe
@@ -261,6 +263,7 @@ class Pipe(str):
         self.distanceFromStart = -1 # init this since we'll need it later and we dont' want to make a whole separate Grid2D for it
         self.isInsideLoop = False
         self.hasBeenVisited = False
+        self.isVertex = character in self.CORNERS
 
     def updateConnectors(self, character):
         """
@@ -305,6 +308,10 @@ class PipeNetwork(utils.math.Grid2D):
         assert len(sConnectors) > 0 
         self[sCoord].connectors = sConnectors
 
+        # then figure out if the S is a 90-degree bend or a straight piece
+        self[sCoord].isVertex = not (self[sCoord].connectors[0].x == self[sCoord].connectors[1].x or \
+                                     self[sCoord].connectors[0].y == self[sCoord].connectors[1].y)
+
         # then, once we've got all the pipes connected
         # update each pipe with all of its neighbors
         # so we don't have to keep adding coordinates to themselves
@@ -320,9 +327,17 @@ class PipeNetwork(utils.math.Grid2D):
         # distance from the start point
         self[sCoord].distanceFromStart = 0
 
+        # build a list of vertexes (corner points) starting at the start and using the 
+        # Traverse Paths step to fill in the rest, since we know that goes in order
+        # then we know that all the edges that connect to each other
+        self.vertexes = [sCoord]
+
         # then traverse from one direction back around
         self.traversePath(sCoord, self[sCoord].connections[0], 1)
         self.traversePath(sCoord, self[sCoord].connections[1], 1)
+
+        # then once we got the vertexes and distances, we can build an array of edges
+        self.polygon = utils.math.Polygon2D(self.vertexes)
 
     def traversePath(self, prev, next, distanceSoFar):
         """
@@ -338,6 +353,9 @@ class PipeNetwork(utils.math.Grid2D):
         while self[next] != 'S':
             # if this point hasn't been visited yet
             if self[next].distanceFromStart < 0:
+                if self[next].isVertex:
+                    self.vertexes.append(next)
+
                 self[next].distanceFromStart = distanceSoFar
             # otherwise, pick the minimum of the two distances
             else:
@@ -375,19 +393,26 @@ class PipeNetwork(utils.math.Grid2D):
         """
         return [coord for coord, pipe in self.enumerateCoords() if not pipe.isMainLoop]
 
+    def pointInside(self, point: utils.math.Int2) -> bool:
+        """
+        Check to see if point is contained by the polygon formed by the main loop
+        """
+        middlePoint = utils.math.Float2(point.x + 0.5, point.y + 0.5)
+        return self.polygon.pointInside(middlePoint)
+
 
 class Solver(solver.solver.ProblemSolver):
     def __init__(self, rawData=None):
         super(Solver, self).__init__(10, rawData=rawData)
 
-    def ProcessInput(self):
+    def ProcessInput(self) -> PipeNetwork:
         """
         Take the input and turn it into a PipeNetwork
         :returns PipeNetwork:
         """
         return PipeNetwork(list(self.rawData.splitlines()))
 
-    def SolvePartOne(self):
+    def SolvePartOne(self) -> int:
         """
         Given the processed pipe network, determine the furthest point away from the start point
         that anything can be
@@ -396,23 +421,13 @@ class Solver(solver.solver.ProblemSolver):
         """
         return max([i.distanceFromStart for i in self.processed])
 
-    def SolvePartTwo(self):
+    def SolvePartTwo(self) -> int:
         """
         Given the processed pipe network, determine the number of pipes that
         are fully contained by the pipe network
 
         :return int: the number of contained tiles
         """
-        def floodFill(coordinate, group):
-            group.append(coordinate)
-
-            for coord, pipe in self.processed.enumerateNeighborsBox(coordinate, distance=1):
-                # bail out on the main loop
-                if coord not in group and not pipe.isMainLoop:
-                    group = floodFill(coord, group) 
-
-            return group
-
         # bound our search within the the footprint of the pipe network
         # there's no need to parse tiles outside that
         networkBounds = utils.math.BoundingBox2D.fromPoints(self.processed.mainLoopPipes)
@@ -421,37 +436,37 @@ class Solver(solver.solver.ProblemSolver):
         # consider the pipes that aren't prt of the main loop
         candidates = [coord for coord, pipe in self.processed.enumerateBoundingBox(networkBounds) if not pipe.isMainLoop]
 
-        # break up the candidates into group by floodfilling out from 
+        # break up the candidates into fragments by floodfilling out from 
         # the first available candidate, winnowing down the candidates 
         # until there aren't any more candidates
-        sections = []
+        fragments = []
 
         # do a breadth-first search, since a depth-first search will result in a recursion depth limit
         while candidates:
             # queue up the first candidate point
             queue = [candidates.pop(0)]
-            section = []
+            fragment = []
 
             # while we've still got coords in the queue, add its valid neighbors to the queue
             while queue:
                 target = queue.pop(0)
-                section.append(target)
+                fragment.append(target)
 
                 for coord, pipe in self.processed.enumerateOrthoLocalNeighbors(target):
                     # valid neighbors are those that aren't in the main loop, and those that aren't already
                     # in this section, nor those already queued up
-                    if not pipe.isMainLoop and coord not in queue and coord not in section:
+                    if not pipe.isMainLoop and coord not in queue and coord not in fragment:
                         queue.append(coord)
 
-            sections.append(section)
-            candidates = [c for c in candidates if c not in section]
+            fragments.append(fragment)
+            candidates = [c for c in candidates if c not in fragment]
 
         # then, check the sections to find the sections that are connected to the edge
-        interiorCandidates = []
+        interiorPoints = []
 
-        for section in sections:
+        for fragment in fragments:
             i = 0
-            while i < len(section) and not self.processed.coordOnEdge(section[i]):
+            while i < len(fragment) and not self.processed.coordOnEdge(fragment[i]):
                 i += 1
 
             # if we got to the end and didn't bail early because a point was on the edge,
@@ -459,12 +474,9 @@ class Solver(solver.solver.ProblemSolver):
             # in this section will overlap with the main loop an even or odd number of times
             # if there are an odd number of overlaps, then we know we're inside the loop
             # and if there are an even number of overlaps, we know we're outside the loop
-            if i == len(section):
-                pass
-
-        assert len(interiorCandidates) > 0
-        interiorPoints = []
-
+            if i == len(fragment):
+                if self.processed.pointInside(fragment[0]):
+                    interiorPoints += fragment
 
         return len(interiorPoints)
 

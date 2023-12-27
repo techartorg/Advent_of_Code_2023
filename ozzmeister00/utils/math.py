@@ -243,6 +243,12 @@ class Int2(Number2):
 
         return super(Int2, self).__truediv__(other)
 
+    def direction(self, other: Number2):
+        """
+        Convert the float direction to an integer
+        """
+        return Int2(*[int(i) for i in super(Int2, self).direction(other)])
+
     # overload the setters so that they always convert to int
     @TwoD.x.setter
     def x(self, value):
@@ -336,7 +342,19 @@ class BoundingBox2D(object):
         :param BoundingBox2D other: the other bounding box to check
         :return bool: if the input bounding box overlaps with this one at all
         """
-        raise NotImplementedError("I'll get to this eventually ~ 2023/12/25")
+        if not issubclass(type(other), BoundingBox2D):
+            raise ValueError(f"BoundingBox2D can only test overlaps with BoundingBox2D, not type {type(other)}")
+
+        if self == other:
+            return True
+        
+        if (self.min.x <= other.min.x < self.max.x or \
+           self.min.x <= other.max.x < self.max.x ) and \
+           (self.min.y <= other.min.y < self.max.y or \
+           self.min.y <= other.max.y < self.max.y):
+           return True
+
+        return False
 
     def __eq__(self, other):
         """
@@ -345,6 +363,142 @@ class BoundingBox2D(object):
         """
         return self.min == other.min and \
                self.max == other.max
+
+
+class Line2D(object):
+    """
+    Represents an integer line
+    """
+    def __init__(self, start: Number2, end: Number2):
+        self.start = start
+        self.end = end
+
+    @property
+    def length(self) -> int:
+        return (self.end.x - self.start.x) + (self.end.y - self.start.y)
+
+    @property
+    def direction(self) -> Number2:
+        return self.start.direction(self.end)
+
+    def intersects(self, other) -> bool:
+        """
+        Test if an input line intersects with this line 
+
+        via: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+
+        :param other: the other line to test against
+        """
+        def onSegment(p, q, r) -> bool:
+            if ( (q.x <= max(p.x, r.x)) and (q.x >= min(p.x, r.x)) and \
+                    (q.y <= max(p.y, r.y)) and (q.y >= min(p.y, r.y))): 
+                return True
+            return False
+            
+
+        o1 = Polygon2D([self.start, self.end, other.start]).orientation()
+        o2 = Polygon2D([self.start, self.end, other.end]).orientation()
+        o3 = Polygon2D([other.start, other.end, self.start]).orientation()
+        o4 = Polygon2D([other.start, other.end, self.end]).orientation()
+
+        if o1 != o2 and o3 != o4:
+            return True            
+
+        if o1 == Polygon2D.Orientation.Collinear and onSegment(self.start, self.end, other.start):
+            return True
+        if o2 == Polygon2D.Orientation.Collinear and onSegment(self.start, other.end, other.start):
+            return True
+        if o3 == Polygon2D.Orientation.Collinear and onSegment(self.end, self.start, other.end):
+            return True
+        if o4 == Polygon2D.Orientation.Collinear and onSegment(self.end, other.start, other.end):
+            return True
+
+        return False
+
+    def __repr__(self):
+        return f"Line2D({self.start}, {self.end})"
+
+
+class Polygon2D(list):
+    class Orientation:
+        Collinear = 0
+        Clockwise = 1
+        CounterClockwise = 2
+
+    """
+    Represents an arbitrary polygon
+    """
+    def __init__(self, args: Number2):
+        """
+        Given an input list of ordered points, make a polygon
+        """
+        super(Polygon2D, self).__init__(args)
+        self.edges = []
+        self._rebuildEdges()
+
+    def _rebuildEdges(self):
+        """
+        Rebuild the edges of the polygon when new vertexes are added or inserted
+        """
+        self.edges = []
+        for i, coord in enumerate(self):
+            index = (i + 1) % len(self)
+            self.edges.append(Line2D(coord, self[index]))
+
+    def orientation(self) -> int:
+        """
+        Using the first three points of this polygon, determine its orientation
+        """
+        p = self[0]
+        q = self[1]
+        r = self[2]
+        value = (float(q.y - p.y) * (r.x - q.x)) - (float(q.x - p.x) * (r.y - q.y))
+
+        if value > 0:
+            return self.Orientation.Clockwise
+        elif value < 0:
+            return self.Orientation.CounterClockwise
+        else:
+            return self.Orientation.Collinear
+
+    def getBounds(self) -> BoundingBox2D:
+        """
+        Get the bounding box of this polygon
+        """
+        return BoundingBox2D.fromPoints(self)
+
+    def pointInside(self, point: Number2) -> bool:
+        """
+        Raycast against all the edges of the main loop to see if the given point is inside or outside
+
+        :param point: the point to test
+        """
+        bounds = self.getBounds()
+        if bounds.pointInside(point):
+            line = Line2D(point, Number2(bounds.max.x + 1, point.y))
+            intersections = 0
+            for edge in self.edges:
+                if line.intersects(edge):
+                    intersections += 1
+
+            return bool(intersections % 2)
+
+        return False
+
+    def append(self, other: Number2):
+        """
+        Override the list append method to update the edges of the polygon
+        """
+        super(Polygon2D, self).append(other)
+        self._rebuildEdges()
+
+    def insert(self, index: int, other: Number2):
+        """
+        Override the list insert method to update the edges of the polygon
+        """
+        super(Polygon2D, self).insert(index, other)
+        self._rebuildEdges()
+
 
 
 class Grid2D(list):
