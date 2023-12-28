@@ -483,5 +483,5 @@ class Solver(solver.solver.ProblemSolver):
 
 if __name__ == '__main__':
     daySolver = Solver()
-    #if solver.runner.RunTests(daySolver.day):
-    daySolver.Run()
+    if solver.runner.RunTests(daySolver.day):
+        daySolver.Run()

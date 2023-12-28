@@ -5,6 +5,7 @@ Common maths functions and datatypes for solving Advent of Code problems
 import math
 import functools
 import operator
+from typing import Any, Iterable
 
 
 def add(a, b=None):
@@ -330,10 +331,10 @@ class BoundingBox2D(object):
         maxValue = Int2(xMax, yMax)
         return BoundingBox2D(minValue, maxValue)
 
-    def pointInside(self, point):
+    def pointInside(self, point: Number2) -> bool:
         """
-        :param Int2 point: the point to test
-        :return bool: if the input point is inside this bounding box
+        :param point: the point to test
+        :return: if the input point is inside this bounding box
         """
         return self.min.x <= point.x < self.max.x and self.min.y <= point.y < self.max.y
 
@@ -347,12 +348,10 @@ class BoundingBox2D(object):
 
         if self == other:
             return True
-        
-        if (self.min.x <= other.min.x < self.max.x or \
-           self.min.x <= other.max.x < self.max.x ) and \
-           (self.min.y <= other.min.y < self.max.y or \
-           self.min.y <= other.max.y < self.max.y):
-           return True
+
+        if (self.min.x <= other.min.x < self.max.x or self.min.x <= other.max.x < self.max.x) and \
+                (self.min.y <= other.min.y < self.max.y or self.min.y <= other.max.y < self.max.y):
+            return True
 
         return False
 
@@ -369,13 +368,14 @@ class Line2D(object):
     """
     Represents an integer line
     """
+
     def __init__(self, start: Number2, end: Number2):
         self.start = start
         self.end = end
 
     @property
     def length(self) -> int:
-        return (self.end.x - self.start.x) + (self.end.y - self.start.y)
+        return abs((self.end.x - self.start.x) + (self.end.y - self.start.y))
 
     @property
     def direction(self) -> Number2:
@@ -389,12 +389,12 @@ class Line2D(object):
 
         :param other: the other line to test against
         """
+
         def onSegment(p, q, r) -> bool:
-            if ( (q.x <= max(p.x, r.x)) and (q.x >= min(p.x, r.x)) and \
-                    (q.y <= max(p.y, r.y)) and (q.y >= min(p.y, r.y))): 
+            if ((q.x <= max(p.x, r.x)) and (q.x >= min(p.x, r.x)) and \
+                    (q.y <= max(p.y, r.y)) and (q.y >= min(p.y, r.y))):
                 return True
             return False
-            
 
         o1 = Polygon2D([self.start, self.end, other.start]).orientation()
         o2 = Polygon2D([self.start, self.end, other.end]).orientation()
@@ -402,7 +402,7 @@ class Line2D(object):
         o4 = Polygon2D([other.start, other.end, self.end]).orientation()
 
         if o1 != o2 and o3 != o4:
-            return True            
+            return True
 
         if o1 == Polygon2D.Orientation.Collinear and onSegment(self.start, self.end, other.start):
             return True
@@ -428,7 +428,8 @@ class Polygon2D(list):
     """
     Represents an arbitrary polygon
     """
-    def __init__(self, args: Number2):
+
+    def __init__(self, args: list[Number2]):
         """
         Given an input list of ordered points, make a polygon
         """
@@ -500,7 +501,6 @@ class Polygon2D(list):
         self._rebuildEdges()
 
 
-
 class Grid2D(list):
     North = Up = Int2(0, 1)
     South = Down = Int2(0, -1)
@@ -515,7 +515,6 @@ class Grid2D(list):
     neighbors = [Right, UpRight, Up, UpLeft, Left, DownLeft, Down, DownRight]
     orthoNeighbors = [Right, Up, Left, Down]
     diagonalNeighbors = [UpRight, UpLeft, DownLeft, DownRight]
-    
 
     def __init__(self, width, data=None):
         """
@@ -548,18 +547,10 @@ class Grid2D(list):
     def height(self):
         """
         Get the height of the Grid2D
+        Height can't be set, since that's a function of its width and the amount of data that's already in it
         :return int:
         """
         return int(len(self) / self.width)
-
-    @height.setter
-    def height(self, value):
-        """
-        Grid2D doesn't support resizing yet
-        """
-        raise NotImplementedError("Grid2D's height is a function of its width, and the length of data it contains"
-                                  "until I can figure out a good way to pad and clear data as the area of the "
-                                  "grid changes.")
 
     def _coordsToIndex(self, coords):
         """
@@ -649,6 +640,17 @@ class Grid2D(list):
                 if self.coordsInBounds(point):
                     yield point, self[point]
 
+    def getRow(self, y: int, reverse: bool = False) -> list[Any]:
+        """
+        Get all the contents of a given row
+        :param y:
+        :param reverse: if true, will reverse the results
+        :return:
+        """
+        step = 1 if not reverse else -1
+        coords = list(range(self.width))
+        return [self[Int2(x, y)] for x in coords[::step]]
+
     def enumerateRow(self, y, reverse=False):
         """
         Yield the items from left to right in the given row
@@ -672,7 +674,7 @@ class Grid2D(list):
         """
         step = 1 if not reverse else -1
         for y in list(range(self.height))[::step]:
-            yield y, self[Int2(0, y):Int2(self.width-1, y)]
+            yield y, self[Int2(0, y):Int2(self.width - 1, y)]
 
     def rows(self, reverse=False):
         """
@@ -681,6 +683,17 @@ class Grid2D(list):
         :yields list[object]:
         """
         raise NotImplementedError("Figure out a way to reuse EnumerateRows")
+
+    def getColumn(self, x: int, reverse: bool = False) -> list[Any]:
+        """
+        Get all the contents of a given column
+        :param x:
+        :param reverse: if true, will reverse the results
+        :return:
+        """
+        step = 1 if not reverse else -1
+        coords = list(range(self.height))
+        return [self[Int2(x, y)] for y in coords[::step]]
 
     def enumerateColumn(self, x, reverse=False):
         """
@@ -706,7 +719,7 @@ class Grid2D(list):
         """
         step = 1 if not reverse else -1
         for x in list(range(self.width))[::step]:
-            yield x, self[Int2(x, 0):Int2(x, self.height-1)]
+            yield x, self[Int2(x, 0):Int2(x, self.height - 1)]
 
     def columns(self, reverse=False):
         """
@@ -753,6 +766,52 @@ class Grid2D(list):
         """
         return [self.indexToCoords(index) for index in self.findIndexes(value)]
 
+    def insertRow(self, y: int, contents: Iterable = None):
+        """
+        Add a new row to this grid
+
+        :param y: the row you want to insert after
+        :param contents: what you want to add to this row
+        """
+        if not contents:
+            contents = [None] * self.width
+
+        for x in range(self.width):
+            self.insert(Int2(x, y), contents[x])
+
+    def insertColumn(self, x: int, contents: Iterable = None):
+        """
+
+        :param x: the row at which to insert the column
+        :param contents: what contents, if any, to insert
+        """
+        if not contents:
+            contents = [None] * self.height
+
+        # when we add to the width, we also need to pad
+        # out the array width some junk data which we'll delete later
+        self.width += 1
+
+        for i in range(self.height + 1):
+            self.append('@')
+
+        # then, now that we've got all the data in its normal coordinates
+        # with a little of padding
+        for y in range(self.height):
+            self.insert(Int2(x, y), contents[y])
+
+        # then, once we're done, we can delete the extra padded data
+        del self[self.width * self.height:]
+
+    def insert(self, index: int | Int2, value: Any):
+        """
+        Override the insert method so we can insert using coordinates
+        """
+        if isinstance(index, Int2):
+            index = self.coordsToIndex(index)
+
+        super(Grid2D, self).insert(index, value)
+
     def __getitem__(self, coords):
         """
         :param int, Int2 coords: the coordinates of the item to retrieve
@@ -786,7 +845,8 @@ class Grid2D(list):
 
                     return [self[Int2(x, coords.start.y)] for x in range(start, stop + 1, step)]
                 else:
-                    raise ValueError("Slicing only supports straight lines. Either Y or X must be the same in start and stop")
+                    raise ValueError(
+                        "Slicing only supports straight lines. Either Y or X must be the same in start and stop")
             else:
                 raise ValueError("Grid2D slicing requires start and stop to be Int2")
         elif isinstance(coords, BoundingBox2D):

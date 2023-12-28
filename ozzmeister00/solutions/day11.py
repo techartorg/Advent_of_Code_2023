@@ -114,27 +114,71 @@ pair of galaxies. What is the sum of these lengths?
 
 
 """
+import itertools
+
 import solver.runner
 import solver.solver
+import utils.math
+
+
+class StarMap(utils.math.Grid2D):
+    def __init__(self, inData: str):
+        # initialize the Grid2D
+        lines = inData.splitlines()
+        width = len(lines[0])
+
+        super(StarMap, self).__init__(width, data=''.join(lines))
+
+        # then loop through and find all the rows and columns that contain no galaxies and expand them
+        x = 0
+        while x < self.width:
+            if all([i == '.' for i in self.getColumn(x)]):
+                self.insertColumn(x, '.' * self.height)
+                # after inserting, make sure we skip ahead so we don't
+                # end up in an infinite loop
+                x += 1
+            x += 1
+
+        y = 0
+        while y < self.height:
+            if all([i == '.' for i in self.getRow(y)]):
+                self.insertRow(y, '.' * self.width)
+                y += 1
+            y += 1
+
+        # then go a head and store off the coordinates of all the galaxies
+        self.galaxies = self.findCoords('#')
+
+    def getDistanceBetweenGalaxies(self, a: int, b: int) -> int:
+        """
+
+        :param a: the index of the galaxy to start from
+        :param b: the index of the galaxy to end at
+        :return: the orthogonal distance between the two galaxies
+        """
+        return utils.math.Line2D(self.galaxies[a], self.galaxies[b]).length
 
 
 class Solver(solver.solver.ProblemSolver):
     def __init__(self, rawData=None):
         super(Solver, self).__init__(11, rawData=rawData)
+        self.processed: StarMap
 
-    def ProcessInput(self):
+    def ProcessInput(self) -> StarMap:
         """
-        :returns:
+        :returns: a star map based on the input data
         """
-        processed = None
-        return processed
+        return StarMap(self.rawData)
 
-    def SolvePartOne(self):
+    def SolvePartOne(self) -> int:
         """
 
         :return int: the result
         """
         result = 0
+        combinations = itertools.combinations(range(len(self.processed.galaxies)), 2)
+        for a, b in combinations:
+            result += self.processed.getDistanceBetweenGalaxies(a, b)
 
         return result
 

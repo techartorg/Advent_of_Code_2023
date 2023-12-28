@@ -354,7 +354,7 @@ class TestGrid2D(TestCase):
         self.assertEqual(outSlice, expected)
 
     def test_bboxGet(self):
-        testGrid = list(range(10))
+        testGrid = list(range(9))
         testObj = utils.math.Grid2D(3, data=testGrid)
 
         minValue = utils.math.Int2(0, 0)
@@ -364,3 +364,23 @@ class TestGrid2D(TestCase):
         expected = [0, 1, 3, 4]
 
         self.assertEqual(expected, testObj[bbox])
+
+    def test_insertRow(self):
+        testGrid = list(range(9))
+        testObj = utils.math.Grid2D(3, data=testGrid)
+
+        testObj.insertRow(1, '***')
+
+        expected = '''012***345678'''
+        result = ''.join([str(i) for i in testObj])
+        self.assertEqual(expected, result)
+
+    def test_insertColumn(self):
+        testGrid = list(range(9))
+        testObj = utils.math.Grid2D(3, data=testGrid)
+
+        testObj.insertColumn(1, '***')
+
+        expected = '''0*123*456*78'''
+        result = ''.join([str(i) for i in testObj])
+        self.assertEqual(expected, result)

@@ -1,11 +1,12 @@
+import itertools
 from unittest import TestCase, SkipTest
 
 import solutions.day11
 import utils.math
 
+
 TEST_DATA = '...#......\n.......#..\n#.........\n..........\n......#...\n.#........\n.........#\n..........\n.......#..\n#...#.....'
 
-raise SkipTest("Day11")
 
 class TestStarMap(TestCase):
     def setUp(self):
@@ -15,7 +16,7 @@ class TestStarMap(TestCase):
         """
         Make sure that the StarMap properly expands when instantiated from the test data
         """
-        self.assertEqual(13, self.v.width)
+        self.assertEqual(13, self.starMap.width)
         self.assertEqual(12, self.starMap.height)
 
     def test_galaxyID(self):
@@ -24,23 +25,32 @@ class TestStarMap(TestCase):
         galaxies in the test data
         """
         coord = utils.math.Int2(4, 0)
-        self.assertEqual(coord, self.starMap.galaxies[1])
+        self.assertEqual(coord, self.starMap.galaxies[0])
 
     def test_distance(self):
         """
         Make sure that we're getting the expected distances between pairs of galaxys based
         on their galaxy IDs
         """
-        pairs = [((1, 7), 15),
-                 ((3, 6), 17),
-                 ((8, 9), 5),
-                 ((5, 9), 9)]
+        pairs = [((0, 6), 15),
+                 ((2, 5), 17),
+                 ((7, 8), 5),
+                 ((4, 8), 9)]
 
-        for start, end, distance in pairs:
-            self.assertEqual(distance, self.galaxy.getDistance(start, end))
+        for indexes, distance in pairs:
+            start, end = indexes
+            self.assertEqual(distance, self.starMap.getDistanceBetweenGalaxies(start, end))
+
+
 
 
 class TestDay11(TestCase):
+    def test_combinations(self):
+        solver = solutions.day11.Solver(rawData=TEST_DATA)
+        combinations = list(itertools.combinations(solver.processed.galaxies, 2))
+        self.assertEqual(36, len(combinations))
+
+
     def test_part01(self):
         solver = solutions.day11.Solver(rawData=TEST_DATA)
         self.assertEqual(374, solver.SolvePartOne())
