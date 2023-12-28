@@ -377,7 +377,7 @@ class Line2D(object):
 
     @property
     def length(self) -> int:
-        return abs((self.end.x - self.start.x) + (self.end.y - self.start.y))
+        return abs((self.end.x - self.start.x)) + abs((self.end.y - self.start.y))
 
     @property
     def direction(self) -> Number2:

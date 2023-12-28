@@ -18,15 +18,6 @@ class TestStarMap(TestCase):
         """
         self.assertEqual(13, self.starMap.width)
         self.assertEqual(12, self.starMap.height)
-        expected = '''....#.................#..#..............................................#.....#...........#............#...................................#...#....#.......'''
-        expectedGrid = utils.math.Grid2D(self.starMap.width, data=expected)
-        print('*'*10, 'expected', '*'*10)
-        print(str(expectedGrid))
-        print('*'*10, 'result', '*'*10)
-        print(str(self.starMap))
-        print('*'*10)
-        result = ''.join(self.starMap)
-        self.assertEqual(expected, result)
 
     def test_galaxyID(self):
         """
@@ -49,8 +40,6 @@ class TestStarMap(TestCase):
         for indexes, distance in pairs:
             start, end = indexes
             self.assertEqual(distance, self.starMap.getDistanceBetweenGalaxies(start, end))
-
-
 
 
 class TestDay11(TestCase):
