@@ -113,8 +113,25 @@ between all 36 pairs of galaxies is 374.
 Expand the universe, then find the length of the shortest path between every 
 pair of galaxies. What is the sum of these lengths?
 
+--- Part Two ---
+The galaxies are much older (and thus much farther apart) than the researcher 
+initially estimated.
 
+Now, instead of the expansion you did before, make each empty row or column one 
+million times larger. That is, each empty row should be replaced with 1000000 
+empty rows, and each empty column should be replaced with 1000000 empty columns.
+
+(In the example above, if each empty row or column were merely 10 times larger, 
+the sum of the shortest paths between every pair of galaxies would be 1030. If 
+each empty row or column were merely 100 times larger, the sum of the shortest 
+paths between every pair of galaxies would be 8410. However, your universe will 
+need to expand far beyond these values.)
+
+Starting with the same initial image, expand the universe according to these new
+ rules, then find the length of the shortest path between every pair of 
+galaxies. What is the sum of these lengths?
 """
+
 import itertools
 
 import solver.runner
@@ -123,32 +140,60 @@ import utils.math
 
 
 class StarMap(utils.math.Grid2D):
-    def __init__(self, inData: str):
+    BLANK = '.'
+    EXPANDED = '~'
+    EXPANSION_THRESHOLD = 99
+
+    def __init__(self, inData: str, expansion: int = 2):
         # initialize the Grid2D
         lines = inData.splitlines()
         width = len(lines[0])
 
+        self.expansion = expansion
+
         super(StarMap, self).__init__(width, data=''.join(lines))
 
         # then loop through and find all the rows and columns that contain no galaxies and expand them
-        x = 0
-        while x < self.width:
-            if all([i == '.' for i in self.getColumn(x)]):
-                self.insertColumn(x, '.' * self.height)
-                # after inserting, make sure we skip ahead so we don't
-                # end up in an infinite loop
-                x += 1
-            x += 1
-
-        y = 0
-        while y < self.height:
-            if all([i == '.' for i in self.getRow(y)]):
-                self.insertRow(y, '.' * self.width)
-                y += 1
-            y += 1
+        self.expandColumns()
+        self.expandRows()
 
         # then go a head and store off the coordinates of all the galaxies
         self.galaxies = self.findCoords('#')
+
+    def expandRows(self):
+        """
+        Based on the expansion value of the star map, either manually expand the rows
+        or mark the rows with a different character so we can hit-test expansion instead
+        """
+
+        y = 0
+        while y < self.height:
+            if all([i == StarMap.BLANK or i == StarMap.EXPANDED for i in self.getRow(y)]):
+                if self.expansion < StarMap.EXPANSION_THRESHOLD:
+                    for i in range(1, self.expansion):
+                        self.insertRow(y, '.' * self.width)
+                        y += 1
+                else:
+                    for x in range(self.width):
+                        self[utils.math.Int2(x, y)] = StarMap.EXPANDED
+            y += 1
+
+    def expandColumns(self):
+        """
+        Based on the expansion value of the star map, either manually expand the columns
+        or mark the columns with a different character so we can hit-test expansion instead
+        """
+        x = 0
+        while x < self.width:
+            if all([i == StarMap.BLANK or i == StarMap.EXPANDED for i in self.getColumn(x)]):
+                if self.expansion < StarMap.EXPANSION_THRESHOLD:
+                    for i in range(1, self.expansion):
+                        self.insertColumn(x, '.' * self.height)
+                        x += 1
+                else:
+                    for y in range(self.height):
+                        self[utils.math.Int2(x, y)] = StarMap.EXPANDED
+            x += 1
 
     def getDistanceBetweenGalaxies(self, a: int, b: int) -> int:
         """
@@ -158,7 +203,24 @@ class StarMap(utils.math.Grid2D):
         :return: the orthogonal distance between the two galaxies
         """
         length = utils.math.Line2D(self.galaxies[a], self.galaxies[b]).length
-        return length
+
+        # if we're below the expansion threshold, then we know we can just return the length
+        if self.expansion < StarMap.EXPANSION_THRESHOLD:
+            return length
+        # however if we're above it, we need to add the expansion value for each expanded cell
+        # along the path from A to B
+        else:
+            aCoord = self.galaxies[a]
+            bCoord = self.galaxies[b]
+
+            # get coords from the rows and columns we pass through to reach the target
+            # ignoring the first point, because we know that will be the starting galaxy
+            horizontal = self[aCoord:utils.math.Int2(bCoord.x, aCoord.y)][1:]
+            vertical = self[aCoord:utils.math.Int2(aCoord.x, bCoord.y)][1:]
+
+            path = horizontal + vertical
+            distances = [self.expansion if i == StarMap.EXPANDED else 1 for i in path]
+            return sum(distances)
 
 
 class Solver(solver.solver.ProblemSolver):
@@ -174,13 +236,29 @@ class Solver(solver.solver.ProblemSolver):
 
     def SolvePartOne(self) -> int:
         """
-
+        Process all the combinations of galaxies, and return the sum of the distances
+        between all those combinations
         :return int: the result
         """
         result = 0
         combinations = itertools.combinations(range(len(self.processed.galaxies)), 2)
         for a, b in combinations:
             result += self.processed.getDistanceBetweenGalaxies(a, b)
+
+        return result
+
+    def SolvePartTwo(self, expansion: int = 1000000):
+        """
+        :param expansion: How much expansion to use when processing the star map
+        :return int: the sum of the distances between all the pairs of galaxies
+        """
+        result = 0
+
+        expandedStarMap = StarMap(self.rawData, expansion=expansion)
+
+        combinations = itertools.combinations(range(len(expandedStarMap.galaxies)), 2)
+        for a, b in combinations:
+            result += expandedStarMap.getDistanceBetweenGalaxies(a, b)
 
         return result
 

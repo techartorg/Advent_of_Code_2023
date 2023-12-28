@@ -11,6 +11,8 @@ TEST_DATA = '...#......\n.......#..\n#.........\n..........\n......#...\n.#.....
 class TestStarMap(TestCase):
     def setUp(self):
         self.starMap = solutions.day11.StarMap(TEST_DATA)
+        self.starMap10 = solutions.day11.StarMap(TEST_DATA, expansion=10)
+        self.starMap100 = solutions.day11.StarMap(TEST_DATA, expansion=100)
 
     def test_expansion(self):
         """
@@ -18,6 +20,12 @@ class TestStarMap(TestCase):
         """
         self.assertEqual(13, self.starMap.width)
         self.assertEqual(12, self.starMap.height)
+
+        self.assertEqual(37, self.starMap10.width)
+        self.assertEqual(28, self.starMap10.height)
+
+        self.assertEqual(10, self.starMap100.width)
+        self.assertEqual(10, self.starMap100.height)
 
     def test_galaxyID(self):
         """
@@ -48,10 +56,14 @@ class TestDay11(TestCase):
         combinations = list(itertools.combinations(solver.processed.galaxies, 2))
         self.assertEqual(36, len(combinations))
 
-
     def test_part01(self):
         solver = solutions.day11.Solver(rawData=TEST_DATA)
         self.assertEqual(374, solver.SolvePartOne())
 
     def test_part02(self):
-        self.skipTest("Not Implemented")
+        solver = solutions.day11.Solver(rawData=TEST_DATA)
+        solver10Result = solver.SolvePartTwo(expansion=10)
+        solver100Result = solver.SolvePartTwo(expansion=100)
+
+        self.assertEqual(1030, solver10Result)
+        self.assertEqual(8410, solver100Result)
