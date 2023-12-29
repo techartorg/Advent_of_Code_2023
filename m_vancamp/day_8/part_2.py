@@ -1,4 +1,5 @@
 import dataclasses
+from math import lcm
 
 
 @dataclasses.dataclass
@@ -60,22 +61,24 @@ def find_starting_nodes(node_data):
     return result
 
 
-def traverse_nodes(instructions, nodes):
-    current_nodes = find_starting_nodes(nodes)
-    print(len(current_nodes))
-
-    num_instructions = list(range(len(instructions)))
-
-    # -- node list never changes size, just contents
-    num_nodes = list(range(len(current_nodes)))
-
-    counter = 0
-    while not all([node.Name.endswith('Z') for node in current_nodes]):
-        for i in num_instructions:
-            for j in num_nodes:
-                current_nodes[j] = current_nodes[j].go(instructions[i])
+def traverse_node(instructions, node):
+    current_node = node
+    counter = 1
+    while not current_node.Name.endswith('Z'):
+        for i in range(len(instructions)):
+            current_node = current_node.go(instructions[i])
+            if current_node.Name.endswith('Z'):
+                break
             counter += 1
     return counter
+
+
+def traverse_nodes(instructions, nodes):
+    current_nodes = find_starting_nodes(nodes)
+    counters = list()
+    for node in current_nodes:
+        counters.append(traverse_node(instructions, node))
+    return lcm(*counters)
 
 
 if __name__ == '__main__':
