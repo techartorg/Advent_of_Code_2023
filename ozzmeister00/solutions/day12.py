@@ -120,25 +120,83 @@ import solver.runner
 import solver.solver
 
 
+class SpringDataEntry(object):
+    """
+    Ingest and process an entry of Spring data and provide
+    functionality to get and test valid configurations
+    """
+    INACTIVE = '#'
+    ACTIVE = '.'
+    UNKNOWN = '?'
+
+    VALID_CHARACTERS = [ACTIVE, INACTIVE, UNKNOWN]
+
+    def __init__(self, entry: str):
+        tokens = entry.split(' ')
+        if any([char not in SpringDataEntry.VALID_CHARACTERS for char in tokens[0]]):
+            raise ValueError(f"Invalid characters in spring data entry {tokens[0]}, characters can only be {SpringDataEntry.VALID_CHARACTERS}")
+
+        self.data = tokens[0]
+        self.inactiveSprings = [int(i) for i in tokens[-1].split(',')]
+
+    def isValidConfiguration(self, configuration: str) -> bool:
+        """
+        Test if the input configuration is valid:
+        - Does not contain any ?
+        - Contains the correct number of blocks of active springs as described by the inactiveSprings
+        """
+        if SpringDataEntry.UNKNOWN in configuration:
+            return False
+
+        activeBlocks = [len(i) for i in configuration.split(SpringDataEntry.ACTIVE) if i]
+        
+        return activeBlocks == self.inactiveSprings
+
+    def buildAllConfigurations(self) -> list[str]:
+        """
+        Using the input data, return a list of ALL possible configurations
+        for each of the UNKNOWN springs in this input data
+        """
+        output = []
+        partialConfigurations = [self.data]
+
+        # build this out breadth-first
+        while partialConfigurations:
+            current = partialConfigurations.pop(0)
+            if SpringDataEntry.UNKNOWN in current:
+                partialConfigurations.append(current.replace(SpringDataEntry.UNKNOWN, SpringDataEntry.ACTIVE, 1))
+                partialConfigurations.append(current.replace(SpringDataEntry.UNKNOWN, SpringDataEntry.INACTIVE, 1))
+            else:
+                output.append(current)
+
+        return output
+
+    def getValidConfigurations(self) -> list[str]:
+        """
+        Using the stored data and the list of configurations, determine the
+        number of valid configurations for this data entry
+        """
+        return [i for i in self.buildAllConfigurations() if self.isValidConfiguration(i)]
+
+    def __str__(self) -> str:
+        return self.data + ' ' + ','.join([str(i) for i in self.inactiveSprings])
+
+    
 class Solver(solver.solver.ProblemSolver):
     def __init__(self, rawData=None):
         super(Solver, self).__init__(12, rawData=rawData)
 
-    def ProcessInput(self):
+    def ProcessInput(self) -> list[SpringDataEntry]:
         """
-        :returns:
+        :returns: all of the constructed spring data entries
         """
-        processed = None
-        return processed
+        return [SpringDataEntry(i) for i in self.rawData.splitlines()]
 
-    def SolvePartOne(self):
+    def SolvePartOne(self) -> int:
         """
-
-        :return int: the result
+        :return int: the number of possible valid configurations for our farm
         """
-        result = 0
-
-        return result
+        return sum([len(i.getValidConfigurations()) for i in self.processed])
 
 
 if __name__ == '__main__':

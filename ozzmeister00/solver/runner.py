@@ -5,7 +5,6 @@ Functions for testing, instantiating, and running a day's solver
 import importlib
 import unittest
 
-
 def _getTestModuleName(day):
     """
 
