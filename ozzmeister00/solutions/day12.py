@@ -114,8 +114,45 @@ arrangements.
 For each row, count all of the different arrangements of operational and broken 
 springs that meet the given criteria. What is the sum of those counts?
 
+Brute Force = 95 seconds, 
 
+--- Part Two ---
+
+As you look out at the field of springs, you feel like there are way more 
+springs than the condition records list. When you examine the records, you 
+discover that they were actually folded up this whole time!
+
+To unfold the records, on each row, replace the list of spring conditions with 
+five copies of itself (separated by ?) and replace the list of contiguous groups
+ of damaged springs with five copies of itself (separated by ,).
+
+So, this row:
+
+.# 1
+Would become:
+
+.#?.#?.#?.#?.# 1,1,1,1,1
+The first line of the above example would become:
+
+???.###????.###????.###????.###????.### 1,1,3,1,1,3,1,1,3,1,1,3,1,1,3
+In the above example, after unfolding, the number of possible arrangements for 
+some rows is now much larger:
+
+???.### 1,1,3 - 1 arrangement
+.??..??...?##. 1,1,3 - 16384 arrangements
+?#?#?#?#?#?#?#? 1,3,1,6 - 1 arrangement
+????.#...#... 4,1,1 - 16 arrangements
+????.######..#####. 1,6,5 - 2500 arrangements
+?###???????? 3,2,1 - 506250 arrangements
+After unfolding, adding all of the possible arrangement counts together produces
+ 525152.
+
+Unfold your condition records; what is the new sum of possible arrangement 
+counts?
 """
+import itertools
+import time
+
 import solver.runner
 import solver.solver
 
@@ -131,7 +168,7 @@ class SpringDataEntry(object):
 
     VALID_CHARACTERS = [ACTIVE, INACTIVE, UNKNOWN]
 
-    def __init__(self, entry: str):
+    def __init__(self, entry: str, unfold: bool = False):
         tokens = entry.split(' ')
         if any([char not in SpringDataEntry.VALID_CHARACTERS for char in tokens[0]]):
             raise ValueError(f"Invalid characters in spring data entry {tokens[0]}, characters can only be {SpringDataEntry.VALID_CHARACTERS}")
@@ -139,17 +176,26 @@ class SpringDataEntry(object):
         self.data = tokens[0]
         self.inactiveSprings = [int(i) for i in tokens[-1].split(',')]
 
+        # if we need to unfold the entry, just add the stuff we already picked apart
+        # to the data we already have four more times
+        if unfold:
+            for i in range(4):
+                self.data += '?' + tokens[0]
+                self.inactiveSprings += [int(i) for i in tokens[-1].split(',')]
+
+
     def isValidConfiguration(self, configuration: str) -> bool:
         """
         Test if the input configuration is valid:
         - Does not contain any ?
-        - Contains the correct number of blocks of active springs as described by the inactiveSprings
+        - Contains the correct number of blocks of active springs as described 
+by the inactiveSprings
         """
         if SpringDataEntry.UNKNOWN in configuration:
             return False
 
         activeBlocks = [len(i) for i in configuration.split(SpringDataEntry.ACTIVE) if i]
-        
+
         return activeBlocks == self.inactiveSprings
 
     def buildAllConfigurations(self) -> list[str]:
@@ -171,17 +217,99 @@ class SpringDataEntry(object):
 
         return output
 
+    def buildConfigurationsSmarter(self) -> list[str]:
+        """
+        Instead of doing a breadth-first search to build the configurations
+        get the combinations for a given section of 
+        """
+        def getSegmentConfigurations(length: int) -> list[str]:
+            """
+            Given an unknown segment of a known length, generate the possible
+            configurations that could fit in this segment
+            """
+            return list(itertools.product(SpringDataEntry.ACTIVE + SpringDataEntry.INACTIVE, repeat=length))
+    
+        data = [i for i in self.data]
+
+        knownSection = ''
+        configurationStructure = []
+
+        while data:
+            print(f"Parsing {data}")
+            target = data.pop(0)
+            if target == '.' or target == '#':
+                knownSection += target
+            else:
+                # if we hit an Unknown character
+                # then bump the current KnownSection up to the configuration structure
+                configurationStructure.append(knownSection)
+                knownSection = ''
+
+                # then figure out long this
+                length = 0
+                while target == '?' and data:
+                    print("Get ? length")
+                    length += 1
+                    target = data.pop(0)
+
+                configurationStructure.append(getSegmentConfigurations(length))
+
+                if target != '?':
+                    # once we figured out the length of that section, 
+                    # add the last thing we popped back in
+                    data.insert(0, target)
+        
+        if knownSection:
+            configurationStructure.append(knownSection)
+
+        # once we've done that exercise we should have a configurationStructure
+        # that looks like this:
+        # ['..', ['.#', '#.', '##', '..'], '##']
+        # and we need to take each of those inner list of combinations
+        # and creature a full string using each of those inner lists
+
+        results = [[]]
+        for target in configurationStructure:
+            print("building configurations")
+            if isinstance(target, str):
+                for i, v in enumerate(results):
+                    results[i].append(target)
+            elif isinstance(target, list):
+                roots = results.copy()
+                results = []
+                for root in roots:
+                    for v in target:
+                        results.append(root + list(v))
+            else:
+                pass
+        
+        results = [''.join(i) for i in results]
+
+        for r in results:
+            print(r)
+
+
+        return results
+
+    def getValidConfigurationsCountSmart(self) -> int:
+        """
+        Does a slightly smarter search for all the valid configurations
+        and just returns the count so we don't have to hold onto all the
+        memory for all those configurations
+        """
+        pass 
+
     def getValidConfigurations(self) -> list[str]:
         """
         Using the stored data and the list of configurations, determine the
         number of valid configurations for this data entry
         """
-        return [i for i in self.buildAllConfigurations() if self.isValidConfiguration(i)]
+        return [i for i in self.buildConfigurationsSmarter() if self.isValidConfiguration(i)]
 
     def __str__(self) -> str:
         return self.data + ' ' + ','.join([str(i) for i in self.inactiveSprings])
 
-    
+
 class Solver(solver.solver.ProblemSolver):
     def __init__(self, rawData=None):
         super(Solver, self).__init__(12, rawData=rawData)
@@ -196,7 +324,11 @@ class Solver(solver.solver.ProblemSolver):
         """
         :return int: the number of possible valid configurations for our farm
         """
-        return sum([len(i.getValidConfigurations()) for i in self.processed])
+        start = time.time()
+        result = sum([len(i.getValidConfigurations()) for i in self.processed])
+        end = time.time()
+        print(f"Part 01 took {end - start} seconds")
+        return result
 
 
 if __name__ == '__main__':
