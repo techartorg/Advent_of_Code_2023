@@ -90,18 +90,105 @@ do you get after summarizing all of your notes?
 """
 import solver.runner
 import solver.solver
+import utils.math
+
+
+class ReflectionOrientation(object):
+    HORIZONTAL = 0
+    VERTICAL = 1
+
+
+
+class Reflection(object):
+    def __init__(self, index: int, orientation: int):
+        self.index = index
+        self.orientation = orientation
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Reflection):
+            return self.index == other.index and self.orientation == other.orientation
+        
+        return super(Reflection, self).__eq__(other)
+
+    def __repr__(self) -> str:
+        return f"Reflection({self.index}, {self.orientation})"
+
+
+
+class TerrainMap(utils.math.Grid2D):
+    def __init__(self, inData: str):
+        lines = inData.splitlines()
+        width = len(lines[0])
+        super(TerrainMap, self).__init__(width, data=inData.replace('\n',''))
+
+    def findReflection(self) -> Reflection:
+        """
+        Find the index of the reflection (where two rows or columns are equal)
+        and return a Reflection object with the index and orientation
+        of the reflection in this terrain map
+        """
+        def searchForReflection(lines: list[str]) -> int:
+            """
+            Handles looping through an input set of lines
+            regardless of orientation and returns the
+            index of reflection, if any
+            """
+            i = 0
+
+            while i < len(lines) -1:
+                print(lines[i])
+                print(lines[i+1])
+                if lines[i] == lines[i+1]:
+                    return i
+                
+                i += 1
+
+            return -1
+
+        # first search for a horizontal reflection
+        index = searchForReflection([row for i, row in self.enumerateRows()])
+        
+        # if we found one, return it
+        if index > -1:
+            return Reflection(index + 1, ReflectionOrientation.HORIZONTAL)
+
+        # otherwise, look for a vertical reflection
+        index = searchForReflection([column for i, column in self.enumerateColumns()])
+
+        # if we DIDN'T find one, assert
+        assert index > -1
+
+        return Reflection(index + 1, ReflectionOrientation.VERTICAL)
 
 
 class Solver(solver.solver.ProblemSolver):
     def __init__(self, rawData=None):
         super(Solver, self).__init__(13, rawData=rawData)
 
-    def ProcessInput(self):
+    def ProcessInput(self) -> list[TerrainMap]:
         """
-        :returns:
+        :returns: a list of TerrainMaps for the input raw data
         """
-        processed = None
-        return processed
+        maps = []
+
+        # run through all the lines in the input data
+        currentMap = ''
+        for line in self.rawData.splitlines():
+            # if the line contains data, add it to the current map
+            if line.strip():
+                currentMap += line
+            # if we hit a blank line, create a new TerrainMap with 
+            # all the data we currently have, and reset the currentMap
+            else:
+                maps.append(TerrainMap(currentMap))
+                currentMap = ''
+
+        # when we're done, if there's any data remaining, treat that as
+        # another map to parse
+        if currentMap:
+            maps.append(TerrainMap(currentMap))
+
+        return maps
 
     def SolvePartOne(self):
         """
