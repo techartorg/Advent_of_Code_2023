@@ -20,22 +20,34 @@ TEST_MAP_B = '''#...##..#
 ..##..###
 #....#..#'''
 
+TEST_MAP_C = '''##.###...#.##
+##.###...#.##
+###.#####..##
+##....#.##.##
+#....#.#.####
+.#....###....
+#....#...####
+.##.##.####..
+..#.##.###.#.'''
 
-TEST_DATA = TEST_MAP_A + '\n' + TEST_MAP_B
+TEST_DATA = TEST_MAP_A + '\n\n' + TEST_MAP_B
 
 
 class TestTerrainMap(TestCase):
     def test_vertical_reflection(self):
-        print('*'*10 + ' VERTICAL ' + '*'*10)
         testMapA = solutions.day13.TerrainMap(TEST_MAP_A)
         expected = solutions.day13.Reflection(5, solutions.day13.ReflectionOrientation.VERTICAL)
         self.assertEqual(expected, testMapA.findReflection())
 
     def test_horizontal_reflection(self):
-        print('*'*10 + ' HORIZONTAL ' + '*'*10)
         testMapB = solutions.day13.TerrainMap(TEST_MAP_B)
         expected = solutions.day13.Reflection(4, solutions.day13.ReflectionOrientation.HORIZONTAL)
         self.assertEqual(expected, testMapB.findReflection())
+
+    def test_early_reflection(self):
+        testMap = solutions.day13.TerrainMap(TEST_MAP_C)
+        expected = solutions.day13.Reflection(1, solutions.day13.ReflectionOrientation.HORIZONTAL)
+        self.assertEqual(expected, testMap.findReflection())
 
 
 class TestDay13(TestCase):

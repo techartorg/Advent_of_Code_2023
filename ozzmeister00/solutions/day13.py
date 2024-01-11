@@ -134,14 +134,41 @@ class TerrainMap(utils.math.Grid2D):
             index of reflection, if any
             """
             i = 0
-
-            while i < len(lines) -1:
-                print(lines[i])
-                print(lines[i+1])
+            indexOfReflection = -1
+            # first find the spot where one line and the next are 
+            # equal to each other
+            while i < len(lines) -1 and indexOfReflection < 0:
                 if lines[i] == lines[i+1]:
-                    return i
+                    indexOfReflection = i
                 
                 i += 1
+
+            # then, if one was found, we next need to search outward from 
+            # that point to ensure the lines on either side are ALSO 
+            # equivalent to each other
+            if indexOfReflection > 0:
+                # start with the lines on either side of the reflection
+                i = indexOfReflection - 1
+                j = indexOfReflection + 2
+
+                validReflection = True
+                while i > -1 and validReflection and j < len(lines):
+                    low = lines[i]
+                    high = lines[j]
+
+                    print(low)
+                    print(high)
+
+                    # if the lines aren't equal, bail out
+                    if low != high:
+                        print("fail")
+                        validReflection = False
+                    
+                    i -= 1 
+                    j += 1
+                
+                if validReflection:
+                    return indexOfReflection
 
             return -1
 
@@ -155,8 +182,9 @@ class TerrainMap(utils.math.Grid2D):
         # otherwise, look for a vertical reflection
         index = searchForReflection([column for i, column in self.enumerateColumns()])
 
-        # if we DIDN'T find one, assert
-        assert index > -1
+        # if we DIDN'T find one, something went wrong
+        if index < 0:
+            raise Exception(f"Couldn't find reflection in map:\n {str(self)}")
 
         return Reflection(index + 1, ReflectionOrientation.VERTICAL)
 
@@ -176,7 +204,7 @@ class Solver(solver.solver.ProblemSolver):
         for line in self.rawData.splitlines():
             # if the line contains data, add it to the current map
             if line.strip():
-                currentMap += line
+                currentMap += line + '\n'
             # if we hit a blank line, create a new TerrainMap with 
             # all the data we currently have, and reset the currentMap
             else:
@@ -190,12 +218,29 @@ class Solver(solver.solver.ProblemSolver):
 
         return maps
 
-    def SolvePartOne(self):
+    def SolvePartOne(self) -> int:
         """
+        Loop through all the terrain maps we've generated
+         and find the point of reflection.
+
+         If the reflection is vertical, sum the indexes
+         If the reflection is horizontal, multiply the index by 100 
+
+         and sum those reflection values
 
         :return int: the result
         """
         result = 0
+
+        reflections = [i.findReflection() for i in self.processed]
+
+        for r in reflections:
+            if r.orientation == ReflectionOrientation.VERTICAL:
+                result += r.index
+            elif r.orientation == ReflectionOrientation.HORIZONTAL:
+                result += (r.index * 100)
+            else:
+                raise ValueError(f"Invalid orientation {r.orientation} for reflection {r}")
 
         return result
 
